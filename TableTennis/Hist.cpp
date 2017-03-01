@@ -1,6 +1,7 @@
 #include "Camera.h"
 #include "Tools.h"
 
+//for debug
 void showHist(IplImage *frame, CvArr *mask, bool wait, bool keep){
 	CvSize sz = cvGetSize(frame);
 	IplImage *channels[3];

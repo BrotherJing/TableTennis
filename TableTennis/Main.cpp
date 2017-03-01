@@ -4,20 +4,21 @@
 using namespace cv;
 using namespace std;
 
+//two cameras
 CvCapture *captureLeft, *captureRight;
 
 IplImage *frameLeft, *IsmallLeft, *frameRight, *IsmallRight;
 IplImage *ImaskLeft, *ImaskSmallLeft, *ImaskRight, *ImaskSmallRight, *ImaskTemp, *ImaskSmallTemp;
-IplImage *hsv[2];
-IplImage *hue[2], *sat[2], *v[2];
 IplImage *IsmallLeftHSV;
 CvSize sz, szSmall;
-
-int ma=125, lo=123, hi=126, vlo = 40, vhi = 215;
-int loIdx[3], hiIdx[3];
+CvRect bbox;
 
 int displayMode = DISPLAY_MODE_FIRST_FRAME;
-vector<CvPoint> points;//record points drawn by user
+
+int ma = 125, lo = 123, hi = 127, vlo = 40, vhi = 215;
+
+//record points drawn by user
+vector<CvPoint> points;
 
 void AllocImages(IplImage *frame){
 
@@ -26,17 +27,6 @@ void AllocImages(IplImage *frame){
 
 	IsmallLeft = cvCreateImage(szSmall, frame->depth, frame->nChannels);
 	IsmallRight = cvCreateImage(szSmall, frame->depth, frame->nChannels);
-
-	hsv[0] = cvCreateImage(sz, frame->depth, 3);
-	hsv[1] = cvCreateImage(sz, frame->depth, 3);
-
-	hue[0] = cvCreateImage(sz, frame->depth, 1);
-	hue[1] = cvCreateImage(sz, frame->depth, 1);
-	sat[0] = cvCreateImage(sz, frame->depth, 1);
-	sat[1] = cvCreateImage(sz, frame->depth, 1);
-	v[0] = cvCreateImage(sz, frame->depth, 1);
-	v[1] = cvCreateImage(sz, frame->depth, 1);
-
 	IsmallLeftHSV = cvCreateImage(szSmall, frame->depth, frame->nChannels);
 
 	ImaskLeft = cvCreateImage(sz, IPL_DEPTH_8U, 1);
@@ -49,8 +39,6 @@ void AllocImages(IplImage *frame){
 
 void DeallocateImages(){
 	cvReleaseImage(&IsmallLeft); cvReleaseImage(&IsmallRight);
-	cvReleaseImage(&hue[0]); cvReleaseImage(&hue[1]);
-	cvReleaseImage(&hsv[0]); cvReleaseImage(&hsv[1]);
 }
 
 void onMouse(int event, int x, int y, int flag, void *ustc){
@@ -69,26 +57,6 @@ void onMouse(int event, int x, int y, int flag, void *ustc){
 	}
 }
 
-void splitFrame(IplImage *frame, int cameraIdx){
-	cvCvtColor(frame, hsv[cameraIdx], CV_BGR2HSV);
-	cvSplit(hsv[cameraIdx], hue[cameraIdx], sat[cameraIdx], v[cameraIdx], 0);
-}
-
-void findTable(){
-	splitFrame(frameLeft, 0);
-	splitFrame(frameRight, 1);
-	cvInRangeS(hue[0], cvScalar(lo), cvScalar(hi), ImaskLeft);
-	cvInRangeS(hue[1], cvScalar(lo), cvScalar(hi), ImaskRight);
-	cvInRangeS(v[0], cvScalar(40), cvScalar(215), ImaskTemp);
-	cvAnd(ImaskLeft, ImaskTemp, ImaskLeft);
-	cvInRangeS(v[1], cvScalar(40), cvScalar(215), ImaskTemp);
-	cvAnd(ImaskRight, ImaskTemp, ImaskRight);
-	cvResize(ImaskLeft, ImaskSmallLeft);
-	cvResize(ImaskRight, ImaskSmallRight);
-	cvShowImage("MaskLeft", ImaskSmallLeft);
-	cvShowImage("MaskRight", ImaskSmallRight);
-}
-
 bool nextFrame(){
 	frameLeft = cvQueryFrame(captureLeft);
 	frameRight = cvQueryFrame(captureRight);
@@ -97,8 +65,6 @@ bool nextFrame(){
 		displayMode = DISPLAY_MODE_PLAY;
 		return true;
 	}
-	splitFrame(frameLeft, 0);
-	splitFrame(frameRight, 1);
 	cvResize(frameLeft, IsmallLeft);
 	cvResize(frameRight, IsmallRight);
 	return true;
@@ -128,13 +94,26 @@ int main(int argc, char **argv){
 	while (1){
 		if (displayMode == DISPLAY_MODE_PLAY){
 			if (!nextFrame())break;
-			findTable();
-		}
+			findTableArea(frameLeft, ImaskLeft, lo, hi, vlo, vhi);
+			findTable(ImaskLeft, &bbox);
+			cvCopy(ImaskLeft, ImaskTemp);
+			cvResize(ImaskTemp, ImaskSmallTemp);
+			findEdges(frameLeft, ImaskLeft);
+			cvResize(ImaskLeft, ImaskSmallLeft);
+			findVertices(ImaskSmallLeft, ImaskSmallTemp, &bbox);
+			cvShowImage("MaskLeft", ImaskSmallLeft);
 
+			findTableArea(frameRight, ImaskRight, lo, hi, vlo, vhi);
+			findTable(ImaskRight, &bbox);
+			findEdges(frameRight, ImaskRight);
+			cvResize(ImaskRight, ImaskSmallRight);
+			//findVertices(ImaskSmallRight);
+			cvShowImage("MaskRight", ImaskSmallRight);
+		}
 		cvShowImage("CameraLeft", IsmallLeft);
 		cvShowImage("CameraRight", IsmallRight);
 
-		char c = cvWaitKey(20);
+		char c = cvWaitKey(0);
 		if (c == 27)break;
 		switch (c){
 		case 'p'://pause
