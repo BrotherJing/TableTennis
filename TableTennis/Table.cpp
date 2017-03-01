@@ -102,7 +102,8 @@ void findEdges(IplImage *frame, IplImage *mask){
 	cvReleaseImage(&mask2);
 }
 
-void findVertices(IplImage *frame, IplImage *tableArea, CvRect *tableBBox){
+bool findVertices(IplImage *frame, CvPoint2D32f *pts){
+	bool success = true;
 	static CvMemStorage *storage;
 	if (storage == NULL){
 		storage = cvCreateMemStorage(0);
@@ -110,7 +111,11 @@ void findVertices(IplImage *frame, IplImage *tableArea, CvRect *tableBBox){
 	else{
 		cvClearMemStorage(storage);
 	}
+	CvFont font = cvFont(1.0);
+	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0);
+	char lineStr[10];
 	CvSeq *lineseq;
+
 	lineseq = cvHoughLines2(frame, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI / 360, 10, 50, 10);
 
 	//remove overlapping lines.
@@ -160,94 +165,49 @@ void findVertices(IplImage *frame, IplImage *tableArea, CvRect *tableBBox){
 	}
 	for (int i = 0; i < total; ++i){
 		cvLine(frame, lines[i][0], lines[i][1], CVX_WHITE, 1, CV_AA, 0);
+		sprintf_s(lineStr, "%d", i);
+		cvPutText(frame, lineStr, cvPoint((lines[i][0].x + lines[i][1].x) / 2, (lines[i][0].y + lines[i][1].y) / 2), &font, CVX_WHITE);
 		//cvLine(frame, cvPoint(0, k_b[i][1]), cvPoint(-k_b[i][1] / k_b[i][0], 0), CVX_WHITE, 1, CV_AA, 0);
 		CvPoint p1 = cvPoint(0, k_b[i][1]);// cvPoint(0, k_b[i][1] / sin(k_b[i][0]));
 		CvPoint p2 = cvPoint(-k_b[i][1] / k_b[i][0], 0);// cvPoint(k_b[i][1] / cos(k_b[i][0]), 0);
 		//cvLine(frame, p1, p2, CVX_WHITE, 1, CV_AA, 0);
 		//printPoint(&p1); printPoint(&p2);
 	}
-	cvShowImage("CameraLeft", tableArea);
 	cvShowImage("MaskLeft", frame);
-	cvWaitKey(0);
-
-	//find 4 borders
-	IplImage *temp = cvCreateImage(cvGetSize(frame), IPL_DEPTH_8U, 1);
-	CvPoint *pts = new CvPoint[4];
-	int npts[] = { 4 };
-	CvPoint tableCenter = cvPoint(tableBBox->x + (tableBBox->width / 2), tableBBox->y + (tableBBox->height / 2));
-
-	double bestScore = 0.0;
-	CvPoint *bestPoint = new CvPoint[4];
-
-	for (int i1 = 0; i1 < total-3; ++i1){
-		for (int i2 = i1+1; i2 < total-2; ++i2){
-			//double y12 = (k_b[i2][1] / k_b[i2][0] - k_b[i1][1] / k_b[i1][0]) / (tan(k_b[i2][0] - tan(k_b[i1][0])));
-			//double x12 = (k_b[i1][1] - y12*sin(k_b[i1][0])) / cos(k_b[i1][0]);
-			for (int i3 = i2+1; i3 < total-1; ++i3){
-				//double y23 = (k_b[i3][1] / k_b[i3][0] - k_b[i2][1] / k_b[i2][0]) / (tan(k_b[i3][0] - tan(k_b[i2][0])));
-				//double x23 = (k_b[i2][1] - y23*sin(k_b[i2][0])) / cos(k_b[i2][0]);
-				for (int i4 = i3+1; i4 < total; ++i4){
-					//double y34 = (k_b[i4][1] / k_b[i4][0] - k_b[i3][1] / k_b[i3][0]) / (tan(k_b[i4][0] - tan(k_b[i3][0])));
-					//double x34 = (k_b[i3][1] - y34*sin(k_b[i3][0])) / cos(k_b[i3][0]);
-					//double y41 = (k_b[i1][1] / k_b[i1][0] - k_b[i4][1] / k_b[i4][0]) / (tan(k_b[i1][0] - tan(k_b[i4][0])));
-					//double x41 = (k_b[i4][1] - y41*sin(k_b[i4][0])) / cos(k_b[i4][0]);
-
-					double angles[4];
-					int idx[] = { 0, 1, 2, 3 };
-					angles[0] = computeAngle(tableCenter, k_b[i1][0], k_b[i1][1]);
-					angles[1] = computeAngle(tableCenter, k_b[i2][0], k_b[i2][1]);
-					angles[2] = computeAngle(tableCenter, k_b[i3][0], k_b[i3][1]);
-					angles[3] = computeAngle(tableCenter, k_b[i4][0], k_b[i4][1]);
-					sortAngles(angles, idx);
-					int x12 = (int)(-(k_b[idx[1]][1] - k_b[idx[0]][1]) / (k_b[idx[1]][0] - k_b[idx[0]][0]));
-					int y12 = (int)(k_b[idx[0]][0] * x12 + k_b[idx[0]][1]);
-					pts[0] = cvPoint(x12, y12);
-					int x23 = (int)(-(k_b[idx[2]][1] - k_b[idx[1]][1]) / (k_b[idx[2]][0] - k_b[idx[1]][0]));
-					int y23 = (int)(k_b[idx[1]][0] * x23 + k_b[idx[1]][1]);
-					pts[1] = cvPoint(x23, y23);
-					int x34 = (int)(-(k_b[idx[3]][1] - k_b[idx[2]][1]) / (k_b[idx[3]][0] - k_b[idx[2]][0]));
-					int y34 = (int)(k_b[idx[2]][0] * x34 + k_b[idx[2]][1]);
-					pts[2] = cvPoint(x34, y34);
-					int x41 = (int)(-(k_b[idx[0]][1] - k_b[idx[3]][1]) / (k_b[idx[0]][0] - k_b[idx[3]][0]));
-					int y41 = (int)(k_b[idx[3]][0] * x41 + k_b[idx[3]][1]);
-					pts[3] = cvPoint(x41, y41);
-
-					cvZero(frame);
-					cvCircle(frame, pts[0], 4, CVX_WHITE, 1, CV_AA, 0);
-					cvCircle(frame, pts[1], 4, CVX_WHITE, 1, CV_AA, 0);
-					cvCircle(frame, pts[2], 4, CVX_WHITE, 1, CV_AA, 0);
-					cvCircle(frame, pts[3], 4, CVX_WHITE, 1, CV_AA, 0);
-					cvLine(frame, lines[idx[0]][0], lines[idx[0]][1], CVX_WHITE, 1, CV_AA, 0);
-					cvLine(frame, lines[idx[1]][0], lines[idx[1]][1], CVX_WHITE, 1, CV_AA, 0);
-					cvLine(frame, lines[idx[2]][0], lines[idx[2]][1], CVX_WHITE, 1, CV_AA, 0);
-					cvLine(frame, lines[idx[3]][0], lines[idx[3]][1], CVX_WHITE, 1, CV_AA, 0);
-					cvFillPoly(frame, &pts, npts, 0, CVX_WHITE, CV_AA);
-					cvShowImage("CameraLeft", tableArea);
-					cvShowImage("MaskLeft", frame);
-					cvOr(frame, tableArea, temp);
-					CvScalar unionArea = cvAvg(temp);
-					cvAnd(frame, tableArea, temp);
-					CvScalar intersectArea = cvAvg(temp);
-					double score = intersectArea.val[0] * 1.0 / unionArea.val[0];
-					printPoint(&pts[0]); printPoint(&pts[1]); printPoint(&pts[2]); printPoint(&pts[3]);
-					cout << "new score: " << score << " "<<unionArea.val[0]<<" "<<intersectArea.val[0]<<endl;
-					cvWaitKey(0);
-					if (score > bestScore){
-						bestScore = score;
-						bestPoint[0] = pts[0];
-						bestPoint[1] = pts[1];
-						bestPoint[2] = pts[2];
-						bestPoint[3] = pts[3];
-					}
-				}
-			}
+	int idx[4];
+	for (int i = 0; i < 4; ++i){
+		char c = cvWaitKey(0);
+		idx[i] = c - '0';
+		if (idx[i]<0 || idx[i]>total){
+			success = false;
+			goto END;
 		}
+		cvLine(frame, lines[idx[i]][0], lines[idx[i]][1], CVX_WHITE, 2, CV_AA, 0);
+		cvShowImage("MaskLeft", frame);
 	}
-	//cvFillPoly(frame, &bestPoint, npts, 0, CVX_WHITE, CV_AA);
+	cout << idx[0] << idx[1] << idx[2] << idx[3] << endl;
 
+	float x12 = (float)(-(k_b[idx[1]][1] - k_b[idx[0]][1]) / (k_b[idx[1]][0] - k_b[idx[0]][0]));
+	float y12 = (float)(k_b[idx[0]][0] * x12 + k_b[idx[0]][1]);
+	pts[0] = cvPoint2D32f(x12, y12);
+	float x23 = (float)(-(k_b[idx[2]][1] - k_b[idx[1]][1]) / (k_b[idx[2]][0] - k_b[idx[1]][0]));
+	float y23 = (float)(k_b[idx[1]][0] * x23 + k_b[idx[1]][1]);
+	pts[1] = cvPoint2D32f(x23, y23);
+	float x34 = (float)(-(k_b[idx[3]][1] - k_b[idx[2]][1]) / (k_b[idx[3]][0] - k_b[idx[2]][0]));
+	float y34 = (float)(k_b[idx[2]][0] * x34 + k_b[idx[2]][1]);
+	pts[2] = cvPoint2D32f(x34, y34);
+	float x41 = (float)(-(k_b[idx[0]][1] - k_b[idx[3]][1]) / (k_b[idx[0]][0] - k_b[idx[3]][0]));
+	float y41 = (float)(k_b[idx[3]][0] * x41 + k_b[idx[3]][1]);
+	pts[3] = cvPoint2D32f(x41, y41);
+
+	for (int i = 0; i < 4; ++i){
+		cvCircle(frame, cvPoint((int)pts[i].x, (int)pts[i].y), 5, CVX_WHITE);
+	}
+END:
 	for (int i = 0; i < lineseq->total; i++){ delete lines[i]; delete k_b[i]; }
 	delete[] lines;
 	delete[] k_b;
+	return success;
 }
 
 void printPoint(CvPoint *point){

@@ -30,4 +30,8 @@ const int TABLE_AREA_THRESHOLD = 400;
 const int MORPH_OPEN_ITER = 1;
 const int MORPH_DILATE_ITER = 16;
 
+const int TABLE_HEIGHT = 2740;
+const int TABLE_WIDTH = 1525;
+const int TABLE_IMG_SCALE = 5;
+
 #endif

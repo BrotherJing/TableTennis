@@ -13,8 +13,14 @@ IplImage *IsmallLeftHSV;
 CvSize sz, szSmall;
 CvRect bbox;
 
+//for computing perspective matrix
+CvPoint2D32f ptsLeft[4], ptsRight[4];
+CvMat *HLeft = cvCreateMat(3, 3, CV_32F);
+CvMat *HRight = cvCreateMat(3, 3, CV_32F);
+
 int displayMode = DISPLAY_MODE_FIRST_FRAME;
 
+//for extracting table area
 int ma = 125, lo = 123, hi = 127, vlo = 40, vhi = 215;
 
 //record points drawn by user
@@ -94,26 +100,27 @@ int main(int argc, char **argv){
 	while (1){
 		if (displayMode == DISPLAY_MODE_PLAY){
 			if (!nextFrame())break;
+			cvShowImage("CameraLeft", IsmallLeft);
+			cvShowImage("CameraRight", IsmallRight);
 			findTableArea(frameLeft, ImaskLeft, lo, hi, vlo, vhi);
 			findTable(ImaskLeft, &bbox);
-			cvCopy(ImaskLeft, ImaskTemp);
-			cvResize(ImaskTemp, ImaskSmallTemp);
 			findEdges(frameLeft, ImaskLeft);
 			cvResize(ImaskLeft, ImaskSmallLeft);
-			findVertices(ImaskSmallLeft, ImaskSmallTemp, &bbox);
+			bool left = findVertices(ImaskSmallLeft, ptsLeft);
 			cvShowImage("MaskLeft", ImaskSmallLeft);
 
 			findTableArea(frameRight, ImaskRight, lo, hi, vlo, vhi);
 			findTable(ImaskRight, &bbox);
 			findEdges(frameRight, ImaskRight);
 			cvResize(ImaskRight, ImaskSmallRight);
-			//findVertices(ImaskSmallRight);
+			bool right = findVertices(ImaskSmallRight, ptsRight);
 			cvShowImage("MaskRight", ImaskSmallRight);
+			if (left&&right){
+				//TODO
+			}
 		}
-		cvShowImage("CameraLeft", IsmallLeft);
-		cvShowImage("CameraRight", IsmallRight);
 
-		char c = cvWaitKey(0);
+		char c = cvWaitKey(20);
 		if (c == 27)break;
 		switch (c){
 		case 'p'://pause
