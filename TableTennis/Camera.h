@@ -22,6 +22,10 @@ const int DISPLAY_MODE_PLAY = 1;
 const int DISPLAY_MODE_DRAW = 2;
 const int DISPLAY_MODE_PAUSE = 3;
 
+const int KEY_ENTER = 10;
+const int KEY_RETURN = 13;
+const int KEY_ESC = 27;
+
 const CvScalar CVX_WHITE = CV_RGB(0xff, 0xff, 0xff);
 const CvScalar CVX_RED = CV_RGB(0xff, 0x00, 0x00);
 const CvScalar CVX_BLACK = CV_RGB(0x00, 0x00, 0x00);

@@ -17,10 +17,11 @@ CvRect bbox;
 CvPoint2D32f ptsLeft[4], ptsRight[4];
 CvMat *HLeft = cvCreateMat(3, 3, CV_32F);
 CvMat *HRight = cvCreateMat(3, 3, CV_32F);
-CvMat *intrinsicMatrix = cvCreateMat(3, 3, CV_32F);
-CvMat *distortionCoeffs = cvCreateMat(5, 1, CV_32F);
-CvMat *rotationVectors = cvCreateMat(2, 3, CV_32F);
-CvMat *translationVectors = cvCreateMat(2, 3, CV_32F);
+CvMat *intrinsicMatrix = cvCreateMat(3, 3, CV_32FC1);
+CvMat *distortionCoeffs = cvCreateMat(5, 1, CV_32FC1);
+CvMat *rotationVectors = cvCreateMat(2, 3, CV_32FC1);
+CvMat *translationVectors = cvCreateMat(2, 3, CV_32FC1);
+bool calibrated = false;
 
 int displayMode = DISPLAY_MODE_FIRST_FRAME;
 
@@ -119,13 +120,27 @@ int main(int argc, char **argv){
 			cvResize(ImaskRight, ImaskSmallRight);
 			bool right = findVertices(ImaskSmallRight, ptsRight);
 			cvShowImage("MaskRight", ImaskSmallRight);
-			if (left&&right){
-				//TODO
+			if (left&&right&&!calibrated){
+				calibrateCamera(ptsLeft, ptsRight, cvGetSize(ImaskSmallLeft), intrinsicMatrix, distortionCoeffs, rotationVectors, translationVectors);
+				calibrated = true;
+			}
+			if (calibrated){
+				cvUndistort2(IsmallLeft, IsmallLeftHSV, intrinsicMatrix, distortionCoeffs);
+				cvShowImage("CameraLeft", IsmallLeftHSV);
+				cvUndistort2(IsmallRight, IsmallLeftHSV, intrinsicMatrix, distortionCoeffs);
+				cvShowImage("CameraRight", IsmallLeftHSV);
+				char c = cvWaitKey(0);
+				if (c == KEY_ENTER||c==KEY_RETURN){
+					cvSave("Intrinsics.xml", intrinsicMatrix);
+					cvSave("Distortion.xml", distortionCoeffs);
+					cout << "camera matrix saved!" << endl;
+				}
+				else calibrated = false;
 			}
 		}
 
 		char c = cvWaitKey(20);
-		if (c == 27)break;
+		if (c == KEY_ESC)break;
 		switch (c){
 		case 'p'://pause
 			if (displayMode == DISPLAY_MODE_PLAY)
