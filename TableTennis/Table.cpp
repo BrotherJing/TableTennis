@@ -209,35 +209,3 @@ END:
 	delete[] k_b;
 	return success;
 }
-
-void printPoint(CvPoint *point){
-	cout << "(" << point->x << ", " << point->y << ")" << endl;
-}
-
-double computeAngle(CvPoint center, double k, double b){
-	double k1 = -1.0 / k;
-	double b1 = center.y - center.x*k1;
-	double x1 = (b1 - b) / (k - k1);
-	double y1 = k*x1 + b;
-	return atan2(y1 - center.y, x1 - center.x);
-}
-
-void sortAngles(double *angles, int *idx){
-	double temp, min;
-	int temp2, minidx;
-	for (int i = 0; i < 3; ++i){
-		min = angles[i];
-		for (int j = i + 1; j < 4; ++j){
-			if (angles[j] < min){
-				min = angles[j];
-				minidx = j;
-			}
-		}
-		temp = angles[minidx];
-		angles[minidx] = angles[i];
-		angles[i] = temp;
-		temp2 = idx[minidx];
-		idx[minidx] = idx[i];
-		idx[i] = temp2;
-	}
-}
