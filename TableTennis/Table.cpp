@@ -165,7 +165,7 @@ bool findVertices(IplImage *frame, CvPoint2D32f *pts){
 	}
 	for (int i = 0; i < total; ++i){
 		cvLine(frame, lines[i][0], lines[i][1], CVX_WHITE, 1, CV_AA, 0);
-		sprintf_s(lineStr, "%d", i);
+		sprintf(lineStr, "%d", i);
 		cvPutText(frame, lineStr, cvPoint((lines[i][0].x + lines[i][1].x) / 2, (lines[i][0].y + lines[i][1].y) / 2), &font, CVX_WHITE);
 		//cvLine(frame, cvPoint(0, k_b[i][1]), cvPoint(-k_b[i][1] / k_b[i][0], 0), CVX_WHITE, 1, CV_AA, 0);
 		CvPoint p1 = cvPoint(0, k_b[i][1]);// cvPoint(0, k_b[i][1] / sin(k_b[i][0]));
@@ -175,6 +175,7 @@ bool findVertices(IplImage *frame, CvPoint2D32f *pts){
 	}
 	cvShowImage("MaskLeft", frame);
 	int idx[4];
+	float x12, y12, x23, y23, x34, y34, x41, y41;
 	for (int i = 0; i < 4; ++i){
 		char c = cvWaitKey(0);
 		idx[i] = c - '0';
@@ -187,17 +188,17 @@ bool findVertices(IplImage *frame, CvPoint2D32f *pts){
 	}
 	cout << idx[0] << idx[1] << idx[2] << idx[3] << endl;
 
-	float x12 = (float)(-(k_b[idx[1]][1] - k_b[idx[0]][1]) / (k_b[idx[1]][0] - k_b[idx[0]][0]));
-	float y12 = (float)(k_b[idx[0]][0] * x12 + k_b[idx[0]][1]);
+	x12 = (float)(-(k_b[idx[1]][1] - k_b[idx[0]][1]) / (k_b[idx[1]][0] - k_b[idx[0]][0]));
+	y12 = (float)(k_b[idx[0]][0] * x12 + k_b[idx[0]][1]);
 	pts[0] = cvPoint2D32f(x12, y12);
-	float x23 = (float)(-(k_b[idx[2]][1] - k_b[idx[1]][1]) / (k_b[idx[2]][0] - k_b[idx[1]][0]));
-	float y23 = (float)(k_b[idx[1]][0] * x23 + k_b[idx[1]][1]);
+	x23 = (float)(-(k_b[idx[2]][1] - k_b[idx[1]][1]) / (k_b[idx[2]][0] - k_b[idx[1]][0]));
+	y23 = (float)(k_b[idx[1]][0] * x23 + k_b[idx[1]][1]);
 	pts[1] = cvPoint2D32f(x23, y23);
-	float x34 = (float)(-(k_b[idx[3]][1] - k_b[idx[2]][1]) / (k_b[idx[3]][0] - k_b[idx[2]][0]));
-	float y34 = (float)(k_b[idx[2]][0] * x34 + k_b[idx[2]][1]);
+	x34 = (float)(-(k_b[idx[3]][1] - k_b[idx[2]][1]) / (k_b[idx[3]][0] - k_b[idx[2]][0]));
+	y34 = (float)(k_b[idx[2]][0] * x34 + k_b[idx[2]][1]);
 	pts[2] = cvPoint2D32f(x34, y34);
-	float x41 = (float)(-(k_b[idx[0]][1] - k_b[idx[3]][1]) / (k_b[idx[0]][0] - k_b[idx[3]][0]));
-	float y41 = (float)(k_b[idx[3]][0] * x41 + k_b[idx[3]][1]);
+	x41 = (float)(-(k_b[idx[0]][1] - k_b[idx[3]][1]) / (k_b[idx[0]][0] - k_b[idx[3]][0]));
+	y41 = (float)(k_b[idx[3]][0] * x41 + k_b[idx[3]][1]);
 	pts[3] = cvPoint2D32f(x41, y41);
 
 	for (int i = 0; i < 4; ++i){
