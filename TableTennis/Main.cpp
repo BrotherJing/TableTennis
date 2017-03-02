@@ -17,6 +17,10 @@ CvRect bbox;
 CvPoint2D32f ptsLeft[4], ptsRight[4];
 CvMat *HLeft = cvCreateMat(3, 3, CV_32F);
 CvMat *HRight = cvCreateMat(3, 3, CV_32F);
+CvMat *intrinsicMatrix = cvCreateMat(3, 3, CV_32F);
+CvMat *distortionCoeffs = cvCreateMat(5, 1, CV_32F);
+CvMat *rotationVectors = cvCreateMat(2, 3, CV_32F);
+CvMat *translationVectors = cvCreateMat(2, 3, CV_32F);
 
 int displayMode = DISPLAY_MODE_FIRST_FRAME;
 

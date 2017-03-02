@@ -20,4 +20,7 @@ void printPoint(CvPoint *point);
 void sortAngles(double *angles, int *idx);
 double computeAngle(CvPoint center, double k, double b);
 
+//3d reconstruction
+void calibrateCamera(CvPoint2D32f *ptsLeft, CvPoint2D32f *ptsRight, CvSize imageSize, CvMat *intrinsicMatrix, CvMat *distortionMatrix, CvMat *rotationVectors, CvMat *translationVectors);
+
 #endif
