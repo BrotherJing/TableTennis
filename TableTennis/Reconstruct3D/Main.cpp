@@ -20,6 +20,7 @@ usage:
 =========================================
 */
 
+#include <string>
 #include "Main.h"
 
 using namespace cv;
@@ -160,10 +161,13 @@ CvPoint3D32f uv2xyz(CvPoint uvLeft,CvPoint uvRight)
 
 int main(int argc, char **argv){
 
+	string filename = string(argv[1]);
+	filename = filename.substr(0, filename.find('.')-1);
+
 	ofstream oFile, oFileLeft,oFileRight;
-	oFile.open("coords.csv", ios::out | ios::trunc);
-	oFileLeft.open("left.csv", ios::out | ios::trunc);
-	oFileRight.open("right.csv", ios::out | ios::trunc);
+	oFile.open((filename+".coords.csv").c_str(), ios::out | ios::trunc);
+	oFileLeft.open((filename+"L.csv").c_str(), ios::out | ios::trunc);
+	oFileRight.open((filename+"R.csv").c_str(), ios::out | ios::trunc);
 	
 	loadMatrices(argv);
 	alignSequences();
@@ -188,7 +192,7 @@ int main(int argc, char **argv){
 		*((float*)CV_MAT_ELEM_PTR(*reusult3D, i, 1)) = xyz.y;
 		*((float*)CV_MAT_ELEM_PTR(*reusult3D, i, 2)) = xyz.z;
 	}
-	cvSave("sequence3D.xml", reusult3D);
+	cvSave((filename+".seq3D.xml").c_str(), reusult3D);
 
 	oFile.close();
 	oFileLeft.close();

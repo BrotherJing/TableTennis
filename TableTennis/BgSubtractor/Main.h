@@ -29,7 +29,7 @@ const int KEY_SPACE = 32;
 const int SCALE = 2;
 const int CHANNELS = 3;
 
-const int TRAIN_BG_MODEL_ITER = 100;
+const int TRAIN_BG_MODEL_ITER = 50;
 const int CLEAR_STALE_PER_ITER = 50;
 
 typedef struct ce{

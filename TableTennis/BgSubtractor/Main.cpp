@@ -4,8 +4,8 @@ required input:
 - video
 
 output:
-- sequence.xml
-- sequence_info.xml
+- xxx.sequence.xml
+- xxx.info.xml
 
 usage:
 ./bg xxx.mp4
@@ -206,8 +206,8 @@ int main(int argc, char **argv){
 	*((int*)CV_MAT_ELEM_PTR(*info, 0, 0)) = startFrame;
 	*((int*)CV_MAT_ELEM_PTR(*info, 1, 0)) = originFrame;
 	*((int*)CV_MAT_ELEM_PTR(*info, 2, 0)) = endFrame;
-	cvSave((filename+"sequence.xml").c_str(), result);
-	cvSave((filename+"sequence_info.xml").c_str(), info);
+	cvSave((filename+".sequence.xml").c_str(), result);
+	cvSave((filename+".sequence_info.xml").c_str(), info);
 	cout<<filename<<" result saved!"<<endl;
 
 	releaseImages();
