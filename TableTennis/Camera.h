@@ -4,7 +4,7 @@
 #define cvQueryHistValue_1D( hist, idx0 ) \
     ((float)cvGetReal1D( (hist)->bins, (idx0)))
 
-#define DEBUG_MODE
+//#define DEBUG_MODE
 
 #include <cstdio>
 #include <cmath>

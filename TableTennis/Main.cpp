@@ -1,3 +1,19 @@
+/*
+=========================================
+required input:
+- video(left right)
+
+output:
+- Intrinsics.xml
+- Distortion.xml
+- Rotation.xml
+- Translation.xml
+
+usage:
+./TableTennis left.mp4 right.mp4
+=========================================
+*/
+
 #include "Camera.h"
 #include "Tools.h"
 
@@ -7,7 +23,7 @@ using namespace std;
 //two cameras
 CvCapture *captureLeft, *captureRight;
 
-IplImage *frameLeft, *IsmallLeft, *frameRight, *IsmallRight;
+IplImage *frameLeft, *IsmallLeft, *frameRight, *IsmallRight, *frameTemp;
 IplImage *ImaskLeft, *ImaskSmallLeft, *ImaskRight, *ImaskSmallRight, *ImaskTemp, *ImaskSmallTemp;
 IplImage *IsmallLeftHSV;
 CvSize sz, szSmall;
@@ -46,6 +62,8 @@ void AllocImages(IplImage *frame){
 	ImaskSmallRight = cvCreateImage(szSmall, IPL_DEPTH_8U, 1);
 	ImaskTemp = cvCreateImage(sz, IPL_DEPTH_8U, 1);
 	ImaskSmallTemp = cvCreateImage(szSmall, IPL_DEPTH_8U, 1);
+
+	frameTemp = cvCreateImage(sz, frame->depth, frame->nChannels);
 }
 
 void DeallocateImages(){
@@ -121,18 +139,22 @@ int main(int argc, char **argv){
 			bool right = findVertices(ImaskSmallRight, ptsRight);
 			cvShowImage("MaskRight", ImaskSmallRight);
 			if (left&&right&&!calibrated){
-				calibrateCamera(ptsLeft, ptsRight, cvGetSize(ImaskSmallLeft), intrinsicMatrix, distortionCoeffs, rotationVectors, translationVectors);
+				calibrateCamera(ptsLeft, ptsRight, cvGetSize(ImaskLeft), intrinsicMatrix, distortionCoeffs, rotationVectors, translationVectors);
 				calibrated = true;
 			}
 			if (calibrated){
-				cvUndistort2(IsmallLeft, IsmallLeftHSV, intrinsicMatrix, distortionCoeffs);
+				cvUndistort2(frameLeft, frameTemp, intrinsicMatrix, distortionCoeffs);
+				cvResize(frameTemp, IsmallLeftHSV);
 				cvShowImage("CameraLeft", IsmallLeftHSV);
-				cvUndistort2(IsmallRight, IsmallLeftHSV, intrinsicMatrix, distortionCoeffs);
+				cvUndistort2(frameRight, frameTemp, intrinsicMatrix, distortionCoeffs);
+				cvResize(frameTemp, IsmallLeftHSV);
 				cvShowImage("CameraRight", IsmallLeftHSV);
 				char c = cvWaitKey(0);
 				if (c == KEY_ENTER||c==KEY_RETURN){
 					cvSave("Intrinsics.xml", intrinsicMatrix);
 					cvSave("Distortion.xml", distortionCoeffs);
+					cvSave("Rotation.xml", rotationVectors);
+					cvSave("Translation.xml", translationVectors);
 					cout << "camera matrix saved!" << endl;
 				}
 				else calibrated = false;
