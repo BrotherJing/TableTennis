@@ -1,0 +1,21 @@
+language: cpp
+compiler:
+  - gcc
+before_install:
+  - sudo apt-get update
+before_script:
+  - git clone https://github.com/Itseez/opencv.git
+  - cd opencv
+  - git checkout 2.4.13
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make -j8
+  - sudo make -j8 install
+
+  - cd ../..
+  - mkdir build
+  - cd ./build
+  - cmake ..
+script:
+  - make
