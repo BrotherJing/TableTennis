@@ -11,3 +11,6 @@ add_executable(reconstruct ./Reconstruct3D/Main.cpp)
 add_executable(remaptest ./Reconstruct3D/RemapTest.cpp)
 target_link_libraries(reconstruct ${OpenCV_LIBS})
 target_link_libraries(remaptest ${OpenCV_LIBS})
+
+add_executable(GetZScale ./Reconstruct3D/GetZScale.cpp)
+target_link_libraries(GetZScale ${OpenCV_LIBS})

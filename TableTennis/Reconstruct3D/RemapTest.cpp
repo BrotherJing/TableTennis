@@ -55,13 +55,13 @@ void releaseImages(){
 }
 
 void loadMatrices(char **argv){
-	seq3D = (CvMat*)cvLoad("sequence3D.xml");
+	seq3D = (CvMat*)cvLoad(argv[1]);
 	intrinsicMatrix = (CvMat*)cvLoad("Intrinsics.xml");
 	distortionCoeffs = (CvMat*)cvLoad("Distortion.xml");
 	rotationVectors = (CvMat*)cvLoad("Rotation.xml");
 	translationVectors = (CvMat*)cvLoad("Translation.xml");
-	infoLeft = (CvMat*)cvLoad(argv[1]);
-	infoRight = (CvMat*)cvLoad(argv[2]);
+	infoLeft = (CvMat*)cvLoad(argv[2]);
+	infoRight = (CvMat*)cvLoad(argv[3]);
 
 	translationLeft = cvCreateMat(3, 1, CV_32FC1);
 	translationRight = cvCreateMat(3, 1, CV_32FC1);
@@ -104,8 +104,8 @@ int main(int argc, char **argv){
 
 	namedWindow("display", WINDOW_AUTOSIZE);
 	namedWindow("displayRight", WINDOW_AUTOSIZE);
-	capture = cvCreateFileCapture(argv[3]);
-	captureRight = cvCreateFileCapture(argv[4]);
+	capture = cvCreateFileCapture(argv[4]);
+	captureRight = cvCreateFileCapture(argv[5]);
 	frame = cvQueryFrame(capture);
 	frameRight = cvQueryFrame(captureRight);
 	if(!frame||!frameRight)return 1;
@@ -143,6 +143,7 @@ int main(int argc, char **argv){
 
 		char c = cvWaitKey(100);
 		if (c == KEY_ESC)break;
+		if (c == KEY_SPACE)cvWaitKey(0);
 	}
 	return 0;
 }

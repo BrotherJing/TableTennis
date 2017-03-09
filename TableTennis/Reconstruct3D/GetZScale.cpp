@@ -5,71 +5,76 @@ required matrix file:
 - Distortion.xml
 - Rotation.xml
 - Translation.xml
-- ZScale.xml
 
 required input:
-- sequence 2D(left, right)
+- video(left right)
 
 output:
-- coords.csv
-- left.csv
-- right.csv
-- sequence3D.xml
+- ZScale.xml
 
 usage:
-./reconstruct seqLeft.xml seqRight.xml
+./GetZScale left.mp4 right.mp4
 =========================================
 */
 
-#include <string>
 #include "Main.h"
+
+const int NEW_SCALE = 1;
+const float NET_HEIGHT = 152.5;
 
 using namespace cv;
 using namespace std;
 
-IplImage *frame, *Ismall;
-IplImage *Imask, *ImaskSmall;
+//two cameras
+CvCapture *captureLeft, *captureRight;
+
+IplImage *frameLeft, *IsmallLeft, *frameRight, *IsmallRight;
 CvSize sz, szSmall;
 
-int currentState = STATE_PLAY;
-int frameCount = 0;
-
-int ptrLeft=0, ptrRight=0;
-
-vector<CvPoint3D32f> seq3D;
 CvMat* seqLeft;
 CvMat* seqRight;
 CvMat *intrinsicMatrix;
 CvMat *distortionCoeffs;
 CvMat *rotationVectors, *rotationMatrixLeft, *rotationMatrixRight;
 CvMat *translationVectors, *translationLeft, *translationRight;
-CvMat *matZScale;
 
-void allocImages(IplImage *frame){
+//record points drawn by user
+vector<CvPoint> points;
+CvPoint pts[4];
+
+void AllocImages(IplImage *frame){
+
 	sz = cvGetSize(frame);
-	szSmall.width = sz.width / SCALE; szSmall.height = sz.height / SCALE;
+	szSmall.width = sz.width / NEW_SCALE; szSmall.height = sz.height / NEW_SCALE;
 
-	Ismall = cvCreateImage(szSmall, frame->depth, frame->nChannels);
-
-	Imask = cvCreateImage(sz, IPL_DEPTH_8U, 1);
-	ImaskSmall = cvCreateImage(szSmall, IPL_DEPTH_8U, 1);
+	IsmallLeft = cvCreateImage(szSmall, frame->depth, frame->nChannels);
+	IsmallRight = cvCreateImage(szSmall, frame->depth, frame->nChannels);
 }
 
-void releaseImages(){
+void DeallocateImages(){
+	cvReleaseImage(&IsmallLeft); cvReleaseImage(&IsmallRight);
 }
 
-void loadMatrices(char **argv){
-	seqLeft = (CvMat*)cvLoad(argv[1]);
-	seqRight = (CvMat*)cvLoad(argv[2]);
+void onMouse(int event, int x, int y, int flag, void *ustc){
+	IplImage *frame = (IplImage*)ustc;
+	CvPoint pt = cvPoint(x, y);
+	switch (event){
+	case CV_EVENT_LBUTTONDOWN:
+		points.push_back(pt);
+		cvCircle(frame, pt, 5, CV_RGB(255, 255, 255));
+		cvShowImage("display", frame);
+		break;
+	case CV_EVENT_RBUTTONDOWN:
+		points.clear();
+		break;
+	}
+}
+
+void loadMatrices(){
 	intrinsicMatrix = (CvMat*)cvLoad("Intrinsics.xml");
 	distortionCoeffs = (CvMat*)cvLoad("Distortion.xml");
 	rotationVectors = (CvMat*)cvLoad("Rotation.xml");
 	translationVectors = (CvMat*)cvLoad("Translation.xml");
-	matZScale = (CvMat*)cvLoad("ZScale.xml");
-	if(!matZScale){
-		matZScale = cvCreateMat(1,1,CV_32FC1);
-		*((float*)CV_MAT_ELEM_PTR(*matZScale, 0, 0)) = 1;
-	}
 
 	rotationMatrixLeft = cvCreateMat(3, 3, CV_32FC1);
 	rotationMatrixRight = cvCreateMat(3, 3, CV_32FC1);
@@ -88,17 +93,6 @@ void loadMatrices(char **argv){
 
 	cvRodrigues2(rotationLeftTemp, rotationMatrixLeft);
 	cvRodrigues2(rotationRightTemp, rotationMatrixRight);
-}
-
-void alignSequences(){
-	int startLeft = CV_MAT_ELEM(*seqLeft, int, 0, 0);
-	int startRight = CV_MAT_ELEM(*seqRight, int, 0, 0);
-
-	if(startLeft < startRight){
-		ptrLeft = startRight - startLeft;
-	}else{
-		ptrRight = startLeft - startRight;
-	}
 }
 
 CvPoint3D32f uv2xyz(CvPoint uvLeft,CvPoint uvRight)  
@@ -161,48 +155,68 @@ CvPoint3D32f uv2xyz(CvPoint uvLeft,CvPoint uvRight)
     CvPoint3D32f world;  
     world.x = (float)CV_MAT_ELEM(*XYZ, float, 0,0);
     world.y = (float)CV_MAT_ELEM(*XYZ, float, 1,0);
-    world.z = (float)CV_MAT_ELEM(*XYZ, float, 2,0)*(float)CV_MAT_ELEM(*matZScale, float, 0, 0);
+    world.z = (float)CV_MAT_ELEM(*XYZ, float, 2,0);
   
     return world;  
 }  
 
 int main(int argc, char **argv){
 
-	string filename = string(argv[1]);
-	filename = filename.substr(0, filename.find('.')-1);
+	loadMatrices();
 
-	ofstream oFile, oFileLeft,oFileRight;
-	oFile.open((filename+".coords.csv").c_str(), ios::out | ios::trunc);
-	oFileLeft.open((filename+"L.csv").c_str(), ios::out | ios::trunc);
-	oFileRight.open((filename+"R.csv").c_str(), ios::out | ios::trunc);
-	
-	loadMatrices(argv);
-	alignSequences();
+	namedWindow("display", WINDOW_AUTOSIZE);
 
-	while(ptrLeft<seqLeft->rows &&
-		ptrRight<seqRight->rows){
-		CvPoint3D32f xyz = uv2xyz(cvPoint((int)CV_MAT_ELEM(*seqLeft, int, ptrLeft, 1), (int)CV_MAT_ELEM(*seqLeft, int, ptrLeft, 2)),
-			cvPoint((int)CV_MAT_ELEM(*seqRight, int, ptrRight, 1), (int)CV_MAT_ELEM(*seqRight, int, ptrRight, 2)));
-		seq3D.push_back(xyz);
-		cout<<xyz.x<<","<<xyz.y<<","<<xyz.z<<endl;
-		oFile<<xyz.x<<","<<xyz.y<<","<<xyz.z<<endl;
-		oFileLeft<<CV_MAT_ELEM(*seqLeft, int, ptrLeft, 1)<<","<<CV_MAT_ELEM(*seqLeft, int, ptrLeft, 2)<<endl;
-		oFileRight<<CV_MAT_ELEM(*seqRight, int, ptrRight, 1)<<","<<CV_MAT_ELEM(*seqRight, int, ptrRight, 2)<<endl;
-		ptrLeft++;
-		ptrRight++;
+	captureLeft = cvCreateFileCapture(argv[1]);
+	captureRight = cvCreateFileCapture(argv[2]);
+
+	frameLeft = cvQueryFrame(captureLeft);
+	frameRight = cvQueryFrame(captureRight);
+
+	AllocImages(frameLeft);
+
+	while(true){
+		cvResize(frameLeft, IsmallLeft);
+		setMouseCallback("display", onMouse, IsmallLeft);
+		cvShowImage("display", IsmallLeft);
+		char c = cvWaitKey(0);
+		if(c==KEY_ESC)continue;
+		else if(points.size()!=2){
+			points.clear();
+		}else break;
 	}
-
-	CvMat *reusult3D = cvCreateMat(seq3D.size(), 3, CV_32FC1);
-	for(int i=0;i<seq3D.size();++i){
-		CvPoint3D32f xyz = seq3D[i];
-		*((float*)CV_MAT_ELEM_PTR(*reusult3D, i, 0)) = xyz.x;
-		*((float*)CV_MAT_ELEM_PTR(*reusult3D, i, 1)) = xyz.y;
-		*((float*)CV_MAT_ELEM_PTR(*reusult3D, i, 2)) = xyz.z;
+	cout<<points[0].x<<","<<points[0].y<<" "<<points[1].x<<","<<points[1].y<<endl;
+	pts[0] = points[0];
+	pts[1] = points[1];
+	points.clear();
+	while(true){
+		cvResize(frameRight, IsmallRight);
+		setMouseCallback("display", onMouse, IsmallRight);
+		cvShowImage("display", IsmallRight);
+		char c = cvWaitKey(0);
+		if(c==KEY_ESC)continue;
+		else if(points.size()!=2){
+			points.clear();
+		}else break;
 	}
-	cvSave((filename+".seq3D.xml").c_str(), reusult3D);
+	cout<<points[0].x<<","<<points[0].y<<" "<<points[1].x<<","<<points[1].y<<endl;
+	pts[2] = points[0];
+	pts[3] = points[1];
 
-	oFile.close();
-	oFileLeft.close();
-	oFileRight.close();
+	CvPoint3D32f xyz1 = uv2xyz(pts[0], pts[2]);
+	CvPoint3D32f xyz2 = uv2xyz(pts[1], pts[3]);
+
+	cout<<xyz1.x<<","<<xyz1.y<<","<<xyz1.z<<endl;
+	cout<<xyz2.x<<","<<xyz2.y<<","<<xyz2.z<<endl;
+
+	float zScale = NET_HEIGHT / ((xyz1.z+xyz2.z)/2);
+
+	CvMat *matZScale = cvCreateMat(1, 1, CV_32FC1);
+	*((float*)CV_MAT_ELEM_PTR(*matZScale, 0, 0)) = zScale;
+
+	cvSave("ZScale.xml", matZScale);
+
+	DeallocateImages();
+	cvReleaseCapture(&captureLeft); cvReleaseCapture(&captureRight);
+	cvDestroyWindow("display");
 	return 0;
 }

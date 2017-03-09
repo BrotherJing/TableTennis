@@ -171,6 +171,7 @@ int main(int argc, char **argv){
 		sprintf(frameCountStr, "%d", frameCount);
 		cvPutText(IsmallSmooth, frameCountStr, cvPoint(0, cvGetSize(IsmallSmooth).height), &font, CVX_WHITE);
 		cvShowImage("display", IsmallSmooth);
+		cvShowImage("mask", ImaskSmall);
 		
 		char c = cvWaitKey(20);
 		if (c == KEY_ESC)break;
