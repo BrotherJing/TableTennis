@@ -29,6 +29,6 @@ void find_connected_component(IplImage *mask, int *num, CvRect *bbox){
 
 void draw_connected_components(IplImage *frame, int n, CvRect *bbox){
 	for(int i=0;i<n;++i){
-		cvRectangle(frame, cvPoint(bbox[i].x, bbox[i].y), cvPoint(bbox[i].x+bbox[i].width, bbox[i].y+bbox[i].height), CVX_RED, 2);
+		cvRectangle(frame, cvPoint(bbox[i].x, bbox[i].y), cvPoint(bbox[i].x+bbox[i].width, bbox[i].y+bbox[i].height), CVX_RED, 1);
 	}
 }

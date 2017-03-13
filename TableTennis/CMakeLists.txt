@@ -14,3 +14,6 @@ target_link_libraries(remaptest ${OpenCV_LIBS})
 
 add_executable(GetZScale ./Reconstruct3D/GetZScale.cpp)
 target_link_libraries(GetZScale ${OpenCV_LIBS})
+
+add_executable(CropImage ./BgSubtractor/CropImage.cpp ./BgSubtractor/CropUtils.cpp ./BgSubtractor/Codebook.cpp ./BgSubtractor/ConnectedComp.cpp ./BgSubtractor/Track.cpp)
+target_link_libraries(CropImage ${OpenCV_LIBS})

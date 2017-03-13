@@ -62,7 +62,7 @@ void draw_connected_components(IplImage *frame, int n, CvRect *bbox);
 
 //for tracking
 #define DIS(a,b) sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y))
-const float LOWPASS_FILTER_RATE = 0.6;
+const float LOWPASS_FILTER_RATE = 0.5;
 
 const int DEFAULT_WIDTH = 32/SCALE;
 const int DEFAULT_HEIGHT = 32/SCALE;
