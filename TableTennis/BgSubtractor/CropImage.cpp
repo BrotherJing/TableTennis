@@ -5,6 +5,7 @@ required input:
 
 output:
 - image patches
+- ground truth
 
 usage:
 ./bg xxx.mp4
@@ -117,10 +118,16 @@ int main(int argc, char **argv){
 	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0);
 	char frameCountStr[10];
 
+	string dirname = string("tabletennis/");
 	string filename = string(argv[1]);
 	size_t l = filename.rfind('/')+1, r = filename.find('.');
 	filename = string(filename).substr(l, r-l);
-	cout<<filename<<endl;
+	string prefix = dirname+filename;
+	cout<<prefix<<endl;
+
+	ofstream oFileGroundTruth;
+	oFileGroundTruth.open((dirname+filename+".txt").c_str(), ios::out | ios::trunc);
+
 	namedWindow("display", WINDOW_AUTOSIZE);
 	namedWindow("crops", WINDOW_AUTOSIZE);
 	setMouseCallback("display", onMouse);
@@ -153,6 +160,8 @@ int main(int argc, char **argv){
 			find_connected_component(ImaskSmall, &numComponents, bboxes);
 			draw_connected_components(IsmallSmooth, numComponents, bboxes);
 		}
+		sprintf(frameCountStr, "%04d", frameCount);
+		cvPutText(IsmallSmooth, frameCountStr, cvPoint(0, cvGetSize(IsmallSmooth).height), &font, CVX_WHITE);
 
 		if(frameCount>TRAIN_BG_MODEL_ITER){//training complete
 			if(tracker==NULL && numComponents==1){//find something to track
@@ -161,18 +170,23 @@ int main(int argc, char **argv){
 			if(!trackBall(tracker, bboxes, numComponents)){//target lost, draw bbox manually
 				currentState = STATE_PAUSE;
 				dirty = false;
-			}else{
+			}else{//target tracked
 				int x = tracker->bbox.x;
 				int y = tracker->bbox.y;
 				cvRectangle(IsmallSmooth, cvPoint(x, y), cvPoint(x+tracker->bbox.width, y+tracker->bbox.height), CVX_GREEN, 1);
 				cropImage(frame, crops, cropBBoxes, cvRect(x*SCALE, y*SCALE, tracker->bbox.width*SCALE, tracker->bbox.height*SCALE), &numNeg);
 				stitchImages(crops, cropsDisplay, cropBBoxes, numNeg);
+				char c = cvWaitKey(0);
+				if(c==KEY_RETURN||c==KEY_ENTER){
+					saveImages(crops, cropBBoxes, oFileGroundTruth, prefix, frameCountStr, numNeg);
+					cout<<"image patches for frame "<<frameCount<<" saved"<<endl;
+				}
 			}
 		}
-		sprintf(frameCountStr, "%d", frameCount);
-		cvPutText(IsmallSmooth, frameCountStr, cvPoint(0, cvGetSize(IsmallSmooth).height), &font, CVX_WHITE);
+		
 		cvShowImage("display", IsmallSmooth);
 		cvShowImage("crops", cropsDisplay);
+		cvZero(cropsDisplay);
 		
 		char c = cvWaitKey(20);
 		if (c == KEY_ESC)break;
@@ -184,6 +198,10 @@ int main(int argc, char **argv){
 				if(dirty){
 					cropImage(frame, crops, cropBBoxes, cvRect(tracker->bbox.x*SCALE, tracker->bbox.y*SCALE, tracker->bbox.width*SCALE, tracker->bbox.height*SCALE), &numNeg);
 					stitchImages(crops, cropsDisplay, cropBBoxes, numNeg);
+					cvShowImage("crops", cropsDisplay);
+					saveImages(crops, cropBBoxes, oFileGroundTruth, prefix, frameCountStr, numNeg);
+					cout<<"image patches for frame "<<frameCount<<" saved"<<endl;
+					dirty = false;
 				}
 			}else if(c1=='n'){
 			}else if(c1==KEY_ESC){
@@ -194,6 +212,7 @@ int main(int argc, char **argv){
 		}
 	}
 
+	oFileGroundTruth.close();
 	releaseImages();
 	cvReleaseCapture(&capture);
 	cvDestroyWindow("display");

@@ -58,3 +58,17 @@ void stitchImages(IplImage **crops, IplImage *display, CvRect *bboxes, int numNe
 		}
 	}
 }
+
+void saveImages(IplImage **crops, CvRect *bboxes, ofstream &groundTruth, string prefix, char *frameCountStr, int numNeg, int numPos){
+	char idxStr[5];
+	int numCrops = numNeg + numPos;
+	for(int i=0;i<numCrops;++i){
+		sprintf(idxStr, "%02d", i);
+		cvSaveImage((prefix+frameCountStr+idxStr+".jpg").c_str(), crops[i]);
+		if(i>=numPos){
+			groundTruth<<"0 0 0 0 0"<<endl;
+		}else{
+			groundTruth<<"1 "<<bboxes[i].x<<" "<<bboxes[i].y<<" "<<bboxes[i].x+bboxes[i].width<<" "<<bboxes[i].y+bboxes[i].height<<endl;
+		}
+	}
+}

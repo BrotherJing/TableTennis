@@ -3,6 +3,8 @@
 
 #include <stdlib.h>//srand, rand
 #include <time.h>//time
+#include <fstream>
+#include <iostream>
 
 const int PATCH_WIDTH = 100;
 const int PATCH_HEIGHT = 100;
@@ -24,5 +26,7 @@ void cropImage(IplImage *frame,
 	int maxScale = MAX_SCALE, 
 	int outputSize = PATCH_WIDTH);
 void stitchImages(IplImage **crops, IplImage *display, CvRect *bboxes, int numNeg, int numPos = NUM_POS_PER_FRAME);
+
+void saveImages(IplImage **crops, CvRect *bboxes, ofstream &groundTruth, string prefix, char *frameCountStr, int numNeg, int numPos = NUM_POS_PER_FRAME);
 
 #endif
