@@ -5,6 +5,8 @@
 #include <time.h>//time
 #include <fstream>
 #include <iostream>
+#include <stdio.h>
+#include <limits.h>
 
 const int PATCH_WIDTH = 100;
 const int PATCH_HEIGHT = 100;
@@ -27,6 +29,13 @@ void cropImage(IplImage *frame,
 	int outputSize = PATCH_WIDTH);
 void stitchImages(IplImage **crops, IplImage *display, CvRect *bboxes, int numNeg, int numPos = NUM_POS_PER_FRAME);
 
-void saveImages(IplImage **crops, CvRect *bboxes, ofstream &groundTruth, string prefix, char *frameCountStr, int numNeg, int numPos = NUM_POS_PER_FRAME);
+void saveImages(IplImage **crops, 
+	CvRect *bboxes, 
+	ofstream &filenames, 
+	ofstream &groundTruth, 
+	string prefix, 
+	char *frameCountStr, 
+	int numNeg, 
+	int numPos = NUM_POS_PER_FRAME);
 
 #endif

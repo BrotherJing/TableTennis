@@ -59,12 +59,15 @@ void stitchImages(IplImage **crops, IplImage *display, CvRect *bboxes, int numNe
 	}
 }
 
-void saveImages(IplImage **crops, CvRect *bboxes, ofstream &groundTruth, string prefix, char *frameCountStr, int numNeg, int numPos){
+void saveImages(IplImage **crops, CvRect *bboxes, ofstream &filenames, ofstream &groundTruth, string prefix, char *frameCountStr, int numNeg, int numPos){
 	char idxStr[5];
+	string filename;
 	int numCrops = numNeg + numPos;
 	for(int i=0;i<numCrops;++i){
 		sprintf(idxStr, "%02d", i);
-		cvSaveImage((prefix+frameCountStr+idxStr+".jpg").c_str(), crops[i]);
+		filename = prefix+frameCountStr+idxStr+".jpg";
+		cvSaveImage(filename.c_str(), crops[i]);
+		filenames<<filename<<" 0"<<endl;
 		if(i>=numPos){
 			groundTruth<<"0 0 0 0 0"<<endl;
 		}else{

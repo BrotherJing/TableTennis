@@ -5,7 +5,8 @@ required input:
 
 output:
 - image patches
-- ground truth
+- a list of filename and fake label
+- ground truth of class label and bounding box
 
 usage:
 ./bg xxx.mp4
@@ -117,16 +118,24 @@ int main(int argc, char **argv){
 	CvFont font = cvFont(1.0);
 	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0);
 	char frameCountStr[10];
+	char abs_path_buff[PATH_MAX];
+	if(!realpath("tabletennis", abs_path_buff)){
+		cout<<"get abs dir error."<<endl;
+		return 1;
+	}
 
-	string dirname = string("tabletennis/");
+	string dirname = string(abs_path_buff);
+	dirname += "/";
 	string filename = string(argv[1]);
 	size_t l = filename.rfind('/')+1, r = filename.find('.');
 	filename = string(filename).substr(l, r-l);
 	string prefix = dirname+filename;
 	cout<<prefix<<endl;
 
-	ofstream oFileGroundTruth;
-	oFileGroundTruth.open((dirname+filename+".txt").c_str(), ios::out | ios::trunc);
+	ofstream oFileGroundTruth, oFileNames;
+	oFileNames.open((dirname+filename+".txt").c_str(), ios::out | ios::trunc);
+	oFileGroundTruth.open((dirname+filename+".label.txt").c_str(), ios::out | ios::trunc);
+	oFileGroundTruth<<"cls x1 y1 x2 y2"<<endl;
 
 	namedWindow("display", WINDOW_AUTOSIZE);
 	namedWindow("crops", WINDOW_AUTOSIZE);
@@ -178,7 +187,7 @@ int main(int argc, char **argv){
 				stitchImages(crops, cropsDisplay, cropBBoxes, numNeg);
 				char c = cvWaitKey(0);
 				if(c==KEY_RETURN||c==KEY_ENTER){
-					saveImages(crops, cropBBoxes, oFileGroundTruth, prefix, frameCountStr, numNeg);
+					saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, prefix, frameCountStr, numNeg);
 					cout<<"image patches for frame "<<frameCount<<" saved"<<endl;
 				}
 			}
@@ -199,7 +208,7 @@ int main(int argc, char **argv){
 					cropImage(frame, crops, cropBBoxes, cvRect(tracker->bbox.x*SCALE, tracker->bbox.y*SCALE, tracker->bbox.width*SCALE, tracker->bbox.height*SCALE), &numNeg);
 					stitchImages(crops, cropsDisplay, cropBBoxes, numNeg);
 					cvShowImage("crops", cropsDisplay);
-					saveImages(crops, cropBBoxes, oFileGroundTruth, prefix, frameCountStr, numNeg);
+					saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, prefix, frameCountStr, numNeg);
 					cout<<"image patches for frame "<<frameCount<<" saved"<<endl;
 					dirty = false;
 				}
@@ -212,6 +221,7 @@ int main(int argc, char **argv){
 		}
 	}
 
+	oFileNames.close();
 	oFileGroundTruth.close();
 	releaseImages();
 	cvReleaseCapture(&capture);
