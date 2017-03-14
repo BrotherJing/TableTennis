@@ -8,8 +8,8 @@
 #include <stdio.h>
 #include <limits.h>
 
-const int PATCH_WIDTH = 100;
-const int PATCH_HEIGHT = 100;
+const int PATCH_WIDTH = 227;
+const int PATCH_HEIGHT = 227;
 
 const int NUM_POS_PER_FRAME = 4;
 const int NUM_NEG_PER_FRAME = 8;

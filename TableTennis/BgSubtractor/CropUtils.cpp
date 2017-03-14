@@ -71,7 +71,7 @@ void saveImages(IplImage **crops, CvRect *bboxes, ofstream &filenames, ofstream 
 		if(i>=numPos){
 			groundTruth<<"0 0 0 0 0"<<endl;
 		}else{
-			groundTruth<<"1 "<<bboxes[i].x<<" "<<bboxes[i].y<<" "<<bboxes[i].x+bboxes[i].width<<" "<<bboxes[i].y+bboxes[i].height<<endl;
+			groundTruth<<"1 "<<bboxes[i].x*1.0/PATCH_WIDTH<<" "<<bboxes[i].y*1.0/PATCH_HEIGHT<<" "<<(bboxes[i].x+bboxes[i].width)*1.0/PATCH_WIDTH<<" "<<(bboxes[i].y+bboxes[i].height)*1.0/PATCH_HEIGHT<<endl;
 		}
 	}
 }
