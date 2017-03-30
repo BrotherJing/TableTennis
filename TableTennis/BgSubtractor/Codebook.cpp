@@ -159,3 +159,44 @@ uchar background_diff(uchar *p, codeBook &c, int numChannels, int *minMod, int *
 	if(i>=c.numEntries)return 255;//foreground
 	return 0;//background
 }
+
+BgSubtractor::BgSubtractor(CvSize size, int train_iter, int numComponents):
+	size(size),
+	train_bg_model_iter(train_iter),
+	frameCount(0),
+	numComponents(numComponents){
+	codebooks = new codeBook*[size.height];
+	for(int i=0;i<size.height;++i){
+		codebooks[i] = new codeBook[size.width];
+	}
+	mask = cvCreateImage(size, IPL_DEPTH_8U, 1);
+	bboxes = new CvRect[numComponents];
+}
+
+unsigned BgSubtractor::BOUNDS_DEFAULT[3] = {10, 10, 10};
+int BgSubtractor::MIN_MOD_DEFAULT[3] = {20, 20, 20};
+int BgSubtractor::MAX_MOD_DEFAULT[3] = {20, 20, 20};
+
+/*
+frame: image in YCrCb mode
+draw: optional. draw bounding box on this image
+return: false during training, true during bg subtracting.
+*/
+bool BgSubtractor::process(IplImage *frame, IplImage *draw){
+	frameCount++;
+	codebook_tick_img(frame, codebooks);
+	if(frameCount<train_bg_model_iter){
+		update_codebook_img(frame, codebooks, BOUNDS_DEFAULT);
+	}else if(frameCount==train_bg_model_iter){
+		update_codebook_img(frame, codebooks, BOUNDS_DEFAULT);
+		clear_stale_entries_img(frame, codebooks);
+	}else{
+		background_diff_img(frame, mask, codebooks, MIN_MOD_DEFAULT, MAX_MOD_DEFAULT);
+		numComponents = 4;
+		find_connected_component(mask, &numComponents, bboxes);
+		if(draw!=NULL)
+			draw_connected_components(draw, numComponents, bboxes);
+		return true;
+	}
+	return false;
+}

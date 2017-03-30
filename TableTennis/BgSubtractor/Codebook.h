@@ -25,6 +25,26 @@ typedef struct code_book{
 	int t;
 }codeBook;
 
+class BgSubtractor{
+public:
+	int train_bg_model_iter;
+	//for finding connected components
+	int numComponents;
+	CvRect *bboxes;
+	static unsigned BOUNDS_DEFAULT[3];
+	static int MIN_MOD_DEFAULT[3];
+	static int MAX_MOD_DEFAULT[3];
+	//for bg subtraction
+	codeBook **codebooks;
+
+	BgSubtractor(CvSize size, int train_iter, int numComponents);
+	bool process(IplImage *frame, IplImage *draw=NULL);
+private:
+	int frameCount;
+	CvSize size;
+	IplImage *mask;
+};
+
 void codebook_tick(codeBook &c);
 int update_codebook(uchar *p, codeBook &c, unsigned *cbBounds, int numChannels);
 int clear_stale_entries(codeBook &c);
