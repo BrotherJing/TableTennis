@@ -14,6 +14,8 @@ usage:
 
 #include <string>
 #include "Main.h"
+#include "Codebook.h"
+#include "Track.h"
 
 using namespace cv;
 using namespace std;

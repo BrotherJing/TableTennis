@@ -59,19 +59,36 @@ void stitchImages(IplImage **crops, IplImage *display, CvRect *bboxes, int numNe
 	}
 }
 
-void saveImages(IplImage **crops, CvRect *bboxes, ofstream &filenames, ofstream &groundTruth, string prefix, char *frameCountStr, int numNeg, int numPos){
+void saveImages(IplImage **crops, CvRect *bboxes, ofstream &filenames, ofstream &groundTruth, ofstream &fileBBox, string prefix, char *frameCountStr, int numNeg, int numPos){
 	char idxStr[5];
 	string filename;
 	int numCrops = numNeg + numPos;
+	double ratio = PROB_MAP_WIDHT*1.0/PATCH_WIDTH;
+
+	IplImage *probMap = cvCreateImage(cvSize(PROB_MAP_WIDHT, PROB_MAP_HEIGHT), IPL_DEPTH_8U, 1);
+
 	for(int i=0;i<numCrops;++i){
 		sprintf(idxStr, "%02d", i);
-		filename = prefix+frameCountStr+idxStr+".jpg";
-		cvSaveImage(filename.c_str(), crops[i]);
-		filenames<<filename<<" 0"<<endl;
+		filename = prefix+frameCountStr+idxStr;
+		cvSaveImage((filename+".jpg").c_str(), crops[i]);
 		if(i>=numPos){
-			groundTruth<<"0 0 0 0 0"<<endl;
+			filenames<<filename<<".jpg 0"<<endl;
+			if(OUTPUT_PROB_MAP){
+				cvZero(probMap);
+				cvSaveImage((filename+".prob.jpg").c_str(), probMap);
+				groundTruth<<filename<<".prob.jpg 0"<<endl;
+			}
+			fileBBox<<"0 0 0 0"<<endl;
 		}else{
-			groundTruth<<"1 "<<bboxes[i].x*1.0/PATCH_WIDTH<<" "<<bboxes[i].y*1.0/PATCH_HEIGHT<<" "<<(bboxes[i].x+bboxes[i].width)*1.0/PATCH_WIDTH<<" "<<(bboxes[i].y+bboxes[i].height)*1.0/PATCH_HEIGHT<<endl;
+			filenames<<filename<<".jpg 1"<<endl;
+			if(OUTPUT_PROB_MAP){
+				cvZero(probMap);
+				cvRectangle(probMap, cvPoint(int(bboxes[i].x*ratio) - PROB_MAP_PADDING, int(bboxes[i].y*ratio) - PROB_MAP_PADDING),
+					cvPoint(int((bboxes[i].x+bboxes[i].width)*ratio) + PROB_MAP_PADDING, int((bboxes[i].y+bboxes[i].height)*ratio) + PROB_MAP_PADDING), CVX_WHITE, -1);	
+				cvSaveImage((filename+".prob.jpg").c_str(), probMap);
+				groundTruth<<filename<<".prob.jpg 1"<<endl;
+			}
+			fileBBox<<bboxes[i].x<<" "<<bboxes[i].y<<" "<<bboxes[i].x+bboxes[i].width<<" "<<bboxes[i].y+bboxes[i].height<<endl;
 		}
 	}
 }

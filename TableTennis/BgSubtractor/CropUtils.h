@@ -8,14 +8,21 @@
 #include <stdio.h>
 #include <limits.h>
 
-const int PATCH_WIDTH = 227;
-const int PATCH_HEIGHT = 227;
+const bool OUTPUT_PROB_MAP = true;
 
-const int NUM_POS_PER_FRAME = 4;
+const int PATCH_WIDTH = 100;
+const int PATCH_HEIGHT = 100;
+
+const int PROB_MAP_WIDHT = 50;
+const int PROB_MAP_HEIGHT = 50;
+
+const int PROB_MAP_PADDING = 0;
+
+const int NUM_POS_PER_FRAME = 16;
 const int NUM_NEG_PER_FRAME = 8;
 
 //maximum scale of the patch compared to the original bbox
-const int MAX_SCALE = 3;
+const int MAX_SCALE = 4;
 const int NEG_SCALE = 2;
 
 void cropImage(IplImage *frame, 
@@ -32,7 +39,8 @@ void stitchImages(IplImage **crops, IplImage *display, CvRect *bboxes, int numNe
 void saveImages(IplImage **crops, 
 	CvRect *bboxes, 
 	ofstream &filenames, 
-	ofstream &groundTruth, 
+	ofstream &groundTruth,
+	ofstream &fileBBox,//bbox in the 100*100 patch
 	string prefix, 
 	char *frameCountStr, 
 	int numNeg, 

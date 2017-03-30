@@ -15,6 +15,8 @@ usage:
 
 #include <string>
 #include "Main.h"
+#include "Codebook.h"
+#include "Track.h"
 #include "CropUtils.h"
 
 using namespace cv;
@@ -88,6 +90,8 @@ void onMouse(int event, int x, int y, int flag, void *ustc){
 		lt = pt;
 	}else if(event==CV_EVENT_MOUSEMOVE){
 		if(isDrawing){
+			pt.x = lt.x + (pt.x - lt.x)/2;
+			pt.y = lt.y + (pt.y - lt.y)/2;
 			cvCopy(IsmallSmooth, draw);
 			cvRectangle(draw, lt, pt, CVX_WHITE, 1, CV_AA);
 			cvShowImage("display", draw);
@@ -95,7 +99,8 @@ void onMouse(int event, int x, int y, int flag, void *ustc){
 	}else if(event==CV_EVENT_LBUTTONUP){
 		isDrawing = false;
 		dirty = true;
-		rb = pt;
+		rb.x = lt.x + (pt.x - lt.x)/2;
+		rb.y = lt.y + (pt.y - lt.y)/2;
 		int x = lt.x;
 		int y = lt.y;
 		int w = rb.x-lt.x;
@@ -106,7 +111,7 @@ void onMouse(int event, int x, int y, int flag, void *ustc){
 			tracker->set(cvRect(x, y, w, h));
 		}
 		cvCopy(IsmallSmooth, draw);
-		cvRectangle(draw, lt, pt, CVX_RED, 1, CV_AA);
+		cvRectangle(draw, lt, rb, CVX_RED, 1, CV_AA);
 		cvShowImage("display", draw);
 	}
 }
@@ -118,24 +123,26 @@ int main(int argc, char **argv){
 	CvFont font = cvFont(1.0);
 	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 1.0, 1.0);
 	char frameCountStr[10];
-	char abs_path_buff[PATH_MAX];
-	if(!realpath("tabletennis", abs_path_buff)){
-		cout<<"get abs dir error."<<endl;
-		return 1;
-	}
-
-	string dirname = string(abs_path_buff);
-	dirname += "/";
+	
 	string filename = string(argv[1]);
 	size_t l = filename.rfind('/')+1, r = filename.find('.');
 	filename = string(filename).substr(l, r-l);
-	string prefix = dirname+filename;
+	
+	char abs_path_buff[PATH_MAX];
+	if(!realpath((argv[2]!=NULL?argv[2]:"tabletennis"), abs_path_buff)){
+		cout<<"get abs dir error."<<endl;
+		return -1;
+	}
+	string dirname = string(abs_path_buff);
+	dirname += "/";
+
+	string prefix = dirname + filename;
 	cout<<prefix<<endl;
 
-	ofstream oFileGroundTruth, oFileNames;
-	oFileNames.open((dirname+filename+".txt").c_str(), ios::out | ios::trunc);
-	oFileGroundTruth.open((dirname+filename+".label.txt").c_str(), ios::out | ios::trunc);
-	oFileGroundTruth<<"cls x1 y1 x2 y2"<<endl;
+	ofstream oFileGroundTruth, oFileNames, oFileBBox;
+	oFileNames.open((filename+".txt").c_str(), ios::out | ios::trunc);
+	oFileGroundTruth.open((filename+".label.txt").c_str(), ios::out | ios::trunc);
+	oFileBBox.open((filename+".bbox.txt").c_str(), ios::out|ios::trunc);
 
 	namedWindow("display", WINDOW_AUTOSIZE);
 	namedWindow("crops", WINDOW_AUTOSIZE);
@@ -185,10 +192,15 @@ int main(int argc, char **argv){
 				cvRectangle(IsmallSmooth, cvPoint(x, y), cvPoint(x+tracker->bbox.width, y+tracker->bbox.height), CVX_GREEN, 1);
 				cropImage(frame, crops, cropBBoxes, cvRect(x*SCALE, y*SCALE, tracker->bbox.width*SCALE, tracker->bbox.height*SCALE), &numNeg);
 				stitchImages(crops, cropsDisplay, cropBBoxes, numNeg);
+				cvShowImage("display", IsmallSmooth);
+				cvShowImage("crops", cropsDisplay);
 				char c = cvWaitKey(0);
 				if(c==KEY_RETURN||c==KEY_ENTER){
-					saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, prefix, frameCountStr, numNeg);
+					saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numNeg);
 					cout<<"image patches for frame "<<frameCount<<" saved"<<endl;
+				}else if(c=='d'){
+					currentState = STATE_PAUSE;
+					dirty = false;
 				}
 			}
 		}
@@ -208,9 +220,13 @@ int main(int argc, char **argv){
 					cropImage(frame, crops, cropBBoxes, cvRect(tracker->bbox.x*SCALE, tracker->bbox.y*SCALE, tracker->bbox.width*SCALE, tracker->bbox.height*SCALE), &numNeg);
 					stitchImages(crops, cropsDisplay, cropBBoxes, numNeg);
 					cvShowImage("crops", cropsDisplay);
-					saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, prefix, frameCountStr, numNeg);
-					cout<<"image patches for frame "<<frameCount<<" saved"<<endl;
+					c1 = cvWaitKey(0);
+					if(c1==KEY_RETURN||c1==KEY_ENTER){
+						saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numNeg);
+						cout<<"image patches for frame "<<frameCount<<" saved"<<endl;
+					}
 					dirty = false;
+					currentState = STATE_PLAY;
 				}
 			}else if(c1=='n'){
 			}else if(c1==KEY_ESC){

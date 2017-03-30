@@ -7,6 +7,9 @@ target_link_libraries(TableTennis ${OpenCV_LIBS})
 add_executable(bg ./BgSubtractor/Main.cpp ./BgSubtractor/Codebook.cpp ./BgSubtractor/ConnectedComp.cpp ./BgSubtractor/Track.cpp)
 target_link_libraries(bg ${OpenCV_LIBS})
 
+add_library(bgsubtract SHARED ./BgSubtractor/Codebook.cpp ./BgSubtractor/ConnectedComp.cpp ./BgSubtractor/Track.cpp)
+target_link_libraries(bgsubtract ${OpenCV_LIBS})
+
 add_executable(reconstruct ./Reconstruct3D/Main.cpp)
 add_executable(remaptest ./Reconstruct3D/RemapTest.cpp)
 target_link_libraries(reconstruct ${OpenCV_LIBS})

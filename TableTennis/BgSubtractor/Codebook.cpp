@@ -1,4 +1,4 @@
-#include "Main.h"
+#include "Codebook.h"
 
 void codebook_tick_img(IplImage *frame, codeBook **codebooks){
 	CvSize sz = cvGetSize(frame);
@@ -27,7 +27,7 @@ void clear_stale_entries_img(IplImage *frame, codeBook **codebooks){
 			numCleared += clear_stale_entries(codebooks[y][x]);
 		}
 	}
-	cout<<"entry cleared: "<<numCleared<<endl;
+	//std::cout<<"entry cleared: "<<numCleared<<std::endl;
 }
 
 void codebook_tick(codeBook &c){

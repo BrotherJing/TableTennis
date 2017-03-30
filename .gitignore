@@ -278,3 +278,4 @@ __pycache__/
 # !tools/packages.config
 
 TableTennis/build/*
+TableTennis/scripts/*
