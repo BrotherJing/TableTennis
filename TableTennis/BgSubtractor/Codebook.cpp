@@ -1,4 +1,5 @@
 #include "Codebook.h"
+#include <cstdio>
 
 void codebook_tick_img(IplImage *frame, codeBook **codebooks){
 	CvSize sz = cvGetSize(frame);
@@ -168,6 +169,10 @@ BgSubtractor::BgSubtractor(CvSize size, int train_iter, int numComponents):
 	codebooks = new codeBook*[size.height];
 	for(int i=0;i<size.height;++i){
 		codebooks[i] = new codeBook[size.width];
+		for(int j=0;j<size.width;++j){
+			codebooks[i][j].numEntries=0;
+			codebooks[i][j].t=0;
+		}
 	}
 	mask = cvCreateImage(size, IPL_DEPTH_8U, 1);
 	bboxes = new CvRect[numComponents];
@@ -199,4 +204,13 @@ bool BgSubtractor::process(IplImage *frame, IplImage *draw){
 		return true;
 	}
 	return false;
+}
+
+bool BgSubtractor::process(cv::Mat &frame, cv::Mat &draw){
+	IplImage *frameImg = new IplImage(frame);
+	IplImage *drawImg = new IplImage(draw);
+	bool result = process(frameImg, drawImg);
+	delete frameImg;
+	delete drawImg;
+	return result;
 }

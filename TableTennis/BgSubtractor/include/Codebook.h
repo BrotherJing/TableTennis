@@ -39,6 +39,7 @@ public:
 
 	BgSubtractor(CvSize size, int train_iter, int numComponents);
 	bool process(IplImage *frame, IplImage *draw=NULL);
+	bool process(cv::Mat &frame, cv::Mat &draw);
 private:
 	int frameCount;
 	CvSize size;

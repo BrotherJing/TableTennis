@@ -1,4 +1,4 @@
-#include "Main.h"
+#include "Codebook.h"
 
 void find_connected_component(IplImage *mask, int *num, CvRect *bbox){
 	static CvMemStorage *mem_storage = NULL;
@@ -16,7 +16,7 @@ void find_connected_component(IplImage *mask, int *num, CvRect *bbox){
 		int N=*num, numFilled=0, i;
 		for(i=0, c=contours;c!=NULL;c=c->h_next,++i){
 			if(i<N){
-				cvDrawContours(mask, c, CVX_WHITE, CVX_WHITE, -1, CV_FILLED, 8);
+				cvDrawContours(mask, c, CV_RGB(0xff, 0xff, 0xff), CV_RGB(0xff, 0xff, 0xff), -1, CV_FILLED, 8);
 				if(bbox!=NULL){
 					bbox[i] = cvBoundingRect(c);
 				}
@@ -29,6 +29,6 @@ void find_connected_component(IplImage *mask, int *num, CvRect *bbox){
 
 void draw_connected_components(IplImage *frame, int n, CvRect *bbox){
 	for(int i=0;i<n;++i){
-		cvRectangle(frame, cvPoint(bbox[i].x, bbox[i].y), cvPoint(bbox[i].x+bbox[i].width, bbox[i].y+bbox[i].height), CVX_RED, 1);
+		cvRectangle(frame, cvPoint(bbox[i].x, bbox[i].y), cvPoint(bbox[i].x+bbox[i].width, bbox[i].y+bbox[i].height), CV_RGB(0xff, 0x00, 0x00), 1);
 	}
 }
