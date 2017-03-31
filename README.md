@@ -10,6 +10,7 @@ mkdir build
 cmake ..
 make
 ```
+see more detail in [.travis.yaml](https://github.com/BrotherJing/TableTennis/blob/master/.travis.yml) to install the prerequisites.
 
 ## Usage
 
