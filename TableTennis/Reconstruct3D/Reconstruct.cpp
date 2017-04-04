@@ -1,72 +1,14 @@
-/*
-=========================================
-required matrix file:
-- Intrinsics.xml
-- Distortion.xml
-- Rotation.xml
-- Translation.xml
-- ZScale.xml
-
-required input:
-- sequence 2D(left, right)
-
-output:
-- coords.csv
-- left.csv
-- right.csv
-- sequence3D.xml
-
-usage:
-./reconstruct seqLeft.xml seqRight.xml
-=========================================
-*/
-
-#include <string>
-#include "Main.h"
 #include "Reconstruct.h"
 
-using namespace cv;
 using namespace std;
+using namespace cv;
 
-IplImage *frame, *Ismall;
-IplImage *Imask, *ImaskSmall;
-CvSize sz, szSmall;
-
-int currentState = STATE_PLAY;
-int frameCount = 0;
-
-int ptrLeft=0, ptrRight=0;
-
-vector<CvPoint3D32f> seq3D;
-CvMat* seqLeft;
-CvMat* seqRight;
-CvMat *intrinsicMatrix;
-CvMat *distortionCoeffs;
-CvMat *rotationVectors, *rotationMatrixLeft, *rotationMatrixRight;
-CvMat *translationVectors, *translationLeft, *translationRight;
-CvMat *matZScale;
-
-void allocImages(IplImage *frame){
-	sz = cvGetSize(frame);
-	szSmall.width = sz.width / SCALE; szSmall.height = sz.height / SCALE;
-
-	Ismall = cvCreateImage(szSmall, frame->depth, frame->nChannels);
-
-	Imask = cvCreateImage(sz, IPL_DEPTH_8U, 1);
-	ImaskSmall = cvCreateImage(szSmall, IPL_DEPTH_8U, 1);
-}
-
-void releaseImages(){
-}
-
-void loadMatrices(char **argv){
-	seqLeft = (CvMat*)cvLoad(argv[1]);
-	seqRight = (CvMat*)cvLoad(argv[2]);
-	intrinsicMatrix = (CvMat*)cvLoad("Intrinsics.xml");
-	distortionCoeffs = (CvMat*)cvLoad("Distortion.xml");
-	rotationVectors = (CvMat*)cvLoad("Rotation.xml");
-	translationVectors = (CvMat*)cvLoad("Translation.xml");
-	matZScale = (CvMat*)cvLoad("ZScale.xml");
+Reconstruct::Reconstruct(string camera_matrix_dir){
+	intrinsicMatrix = (CvMat*)cvLoad((camera_matrix_dir + "/Intrinsics.xml").c_str());
+	distortionCoeffs = (CvMat*)cvLoad((camera_matrix_dir + "/Distortion.xml").c_str());
+	rotationVectors = (CvMat*)cvLoad((camera_matrix_dir + "/Rotation.xml").c_str());
+	translationVectors = (CvMat*)cvLoad((camera_matrix_dir + "/Translation.xml").c_str());
+	matZScale = (CvMat*)cvLoad((camera_matrix_dir + "/ZScale.xml").c_str());
 	if(!matZScale){
 		matZScale = cvCreateMat(1,1,CV_32FC1);
 		*((float*)CV_MAT_ELEM_PTR(*matZScale, 0, 0)) = 1;
@@ -91,18 +33,11 @@ void loadMatrices(char **argv){
 	cvRodrigues2(rotationRightTemp, rotationMatrixRight);
 }
 
-void alignSequences(){
-	int startLeft = CV_MAT_ELEM(*seqLeft, int, 0, 0);
-	int startRight = CV_MAT_ELEM(*seqRight, int, 0, 0);
-
-	if(startLeft < startRight){
-		ptrLeft = startRight - startLeft;
-	}else{
-		ptrRight = startLeft - startRight;
-	}
+Reconstruct::~Reconstruct(){
 }
 
-CvPoint3D32f uv2xyz(CvPoint uvLeft,CvPoint uvRight)  
+
+CvPoint3D32f Reconstruct::uv2xyz(CvPoint uvLeft,CvPoint uvRight)
 {  
     //  [u1]      |X|                     [u2]      |X|  
     //Z*|v1| = Ml*|Y|                   Z*|v2| = Mr*|Y|  
@@ -166,49 +101,3 @@ CvPoint3D32f uv2xyz(CvPoint uvLeft,CvPoint uvRight)
   
     return world;  
 }  
-
-int main(int argc, char **argv){
-
-	string filename = string(argv[1]);
-	filename = filename.substr(0, filename.find('.')-1);
-
-	ofstream oFile, oFileLeft,oFileRight;
-	oFile.open((filename+".coords.csv").c_str(), ios::out | ios::trunc);
-	oFileLeft.open((filename+"L.csv").c_str(), ios::out | ios::trunc);
-	oFileRight.open((filename+"R.csv").c_str(), ios::out | ios::trunc);
-	
-	loadMatrices(argv);
-	alignSequences();
-
-	Reconstruct reconstruct(".");
-
-	while(ptrLeft<seqLeft->rows &&
-		ptrRight<seqRight->rows){
-		CvPoint3D32f xyz = uv2xyz(cvPoint((int)CV_MAT_ELEM(*seqLeft, int, ptrLeft, 1), (int)CV_MAT_ELEM(*seqLeft, int, ptrLeft, 2)),
-			cvPoint((int)CV_MAT_ELEM(*seqRight, int, ptrRight, 1), (int)CV_MAT_ELEM(*seqRight, int, ptrRight, 2)));
-		seq3D.push_back(xyz);
-		CvPoint3D32f xyz2 = reconstruct.uv2xyz(cvPoint((int)CV_MAT_ELEM(*seqLeft, int, ptrLeft, 1), (int)CV_MAT_ELEM(*seqLeft, int, ptrLeft, 2)),
-			cvPoint((int)CV_MAT_ELEM(*seqRight, int, ptrRight, 1), (int)CV_MAT_ELEM(*seqRight, int, ptrRight, 2)));
-		cout<<xyz.x<<","<<xyz.y<<","<<xyz.z<<endl;
-		cout<<xyz2.x<<","<<xyz2.y<<","<<xyz2.z<<endl;
-		oFile<<xyz.x<<","<<xyz.y<<","<<xyz.z<<endl;
-		oFileLeft<<CV_MAT_ELEM(*seqLeft, int, ptrLeft, 1)<<","<<CV_MAT_ELEM(*seqLeft, int, ptrLeft, 2)<<endl;
-		oFileRight<<CV_MAT_ELEM(*seqRight, int, ptrRight, 1)<<","<<CV_MAT_ELEM(*seqRight, int, ptrRight, 2)<<endl;
-		ptrLeft++;
-		ptrRight++;
-	}
-
-	CvMat *reusult3D = cvCreateMat(seq3D.size(), 3, CV_32FC1);
-	for(int i=0;i<seq3D.size();++i){
-		CvPoint3D32f xyz = seq3D[i];
-		*((float*)CV_MAT_ELEM_PTR(*reusult3D, i, 0)) = xyz.x;
-		*((float*)CV_MAT_ELEM_PTR(*reusult3D, i, 1)) = xyz.y;
-		*((float*)CV_MAT_ELEM_PTR(*reusult3D, i, 2)) = xyz.z;
-	}
-	cvSave((filename+".seq3D.xml").c_str(), reusult3D);
-
-	oFile.close();
-	oFileLeft.close();
-	oFileRight.close();
-	return 0;
-}

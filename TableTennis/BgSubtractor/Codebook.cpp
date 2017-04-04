@@ -214,3 +214,10 @@ bool BgSubtractor::process(cv::Mat &frame, cv::Mat &draw){
 	delete drawImg;
 	return result;
 }
+
+bool BgSubtractor::process(cv::Mat &frame){
+	IplImage *frameImg = new IplImage(frame);
+	bool result = process(frameImg, NULL);
+	delete frameImg;
+	return result;
+}
