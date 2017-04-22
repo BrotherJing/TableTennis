@@ -19,8 +19,8 @@ Reconstruct::Reconstruct(string camera_matrix_dir){
 	translationLeft = cvCreateMat(3, 1, CV_32FC1);
 	translationRight = cvCreateMat(3, 1, CV_32FC1);
 
-	CvMat *rotationLeftTemp = cvCreateMat(3, 1, CV_32FC1);
-	CvMat *rotationRightTemp = cvCreateMat(3, 1, CV_32FC1);
+	rotationLeftTemp = cvCreateMat(3, 1, CV_32FC1);
+	rotationRightTemp = cvCreateMat(3, 1, CV_32FC1);
 
 	for(int i=0;i<3;++i){
 		*((float*)CV_MAT_ELEM_PTR(*rotationLeftTemp, i, 0)) = (float)CV_MAT_ELEM(*rotationVectors, float, 0, i);
@@ -101,3 +101,18 @@ CvPoint3D32f Reconstruct::uv2xyz(CvPoint uvLeft,CvPoint uvRight)
   
     return world;  
 }  
+
+CvPoint Reconstruct::xyz2uv(CvPoint3D32f xyz, bool left){
+    std::vector<CvPoint3D32f> input;
+    std::vector<CvPoint> output;
+    input.push_back(xyz);
+    if(left){
+        projectPoints(input, rotationLeftTemp, translationLeft, 
+            intrinsicMatrix, distortionCoeffs, output);
+    }else{
+        projectPoints(intput, rotationRightTemp, translationRight, 
+            intrinsicMatrix, distortionCoeffs, output);
+    }
+    return output[0];
+
+}
