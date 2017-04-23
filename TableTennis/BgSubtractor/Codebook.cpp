@@ -198,9 +198,11 @@ bool BgSubtractor::process(IplImage *frame, IplImage *draw){
 	}else{
 		background_diff_img(frame, mask, codebooks, MIN_MOD_DEFAULT, MAX_MOD_DEFAULT);
 		numComponents = 4;
-		find_connected_component(mask, &numComponents, bboxes);
+		//find_connected_component(mask, &numComponents, bboxes);
+		bboxes_vec.clear();
+		find_connected_component2(mask, &numComponents, bboxes_vec);
 		if(draw!=NULL)
-			draw_connected_components(draw, numComponents, bboxes);
+			draw_connected_components2(draw, bboxes_vec);
 		return true;
 	}
 	return false;

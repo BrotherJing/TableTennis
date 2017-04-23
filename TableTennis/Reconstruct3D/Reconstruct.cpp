@@ -103,16 +103,18 @@ CvPoint3D32f Reconstruct::uv2xyz(CvPoint uvLeft,CvPoint uvRight)
 }  
 
 CvPoint Reconstruct::xyz2uv(CvPoint3D32f xyz, bool left){
-    std::vector<CvPoint3D32f> input;
-    std::vector<CvPoint> output;
-    input.push_back(xyz);
+    CvMat *input = cvCreateMat(1, 3, CV_32FC1);
+    CvMat *output = cvCreateMat(1, 2, CV_32FC1);
+    *((float*)CV_MAT_ELEM_PTR(*input, 0, 0)) = xyz.x;
+    *((float*)CV_MAT_ELEM_PTR(*input, 0, 1)) = xyz.y;
+    *((float*)CV_MAT_ELEM_PTR(*input, 0, 2)) = xyz.z;
     if(left){
-        projectPoints(input, rotationLeftTemp, translationLeft, 
+        cvProjectPoints2(input, rotationLeftTemp, translationLeft, 
             intrinsicMatrix, distortionCoeffs, output);
     }else{
-        projectPoints(intput, rotationRightTemp, translationRight, 
+        cvProjectPoints2(input, rotationRightTemp, translationRight, 
             intrinsicMatrix, distortionCoeffs, output);
     }
-    return output[0];
-
+    return CvPoint{(float)CV_MAT_ELEM(*output, float, 0, 0),
+    (float)CV_MAT_ELEM(*output, float, 0, 1)};
 }

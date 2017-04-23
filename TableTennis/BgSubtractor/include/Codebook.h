@@ -31,6 +31,7 @@ public:
 	//for finding connected components
 	int numComponents;
 	CvRect *bboxes;
+	std::vector<cv::Rect> bboxes_vec;
 	static unsigned BOUNDS_DEFAULT[3];
 	static int MIN_MOD_DEFAULT[3];
 	static int MAX_MOD_DEFAULT[3];
@@ -58,6 +59,8 @@ void clear_stale_entries_img(IplImage *frame, codeBook **codebooks);
 void background_diff_img(IplImage *frame, IplImage *mask, codeBook **codebooks, int *minMod, int *maxMod);
 
 void find_connected_component(IplImage *mask, int *num=NULL, CvRect *bbox=NULL);
+void find_connected_component2(IplImage *mask, int *num, std::vector<cv::Rect> &bbox);
 void draw_connected_components(IplImage *frame, int n, CvRect *bbox);
+void draw_connected_components2(IplImage *frame, std::vector<cv::Rect> &bbox);
 
 #endif
