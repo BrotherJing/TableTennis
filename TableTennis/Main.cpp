@@ -10,7 +10,8 @@ output:
 - Translation.xml
 
 usage:
-./TableTennis left.mp4 right.mp4
+./TableTennis left.mp4 right.mp4 [intrinsic matrix] [distortion coeffs]
+first press 'l', to add line hint. then draw an area of the table, then press 'd'.
 =========================================
 */
 
@@ -185,8 +186,14 @@ int main(int argc, char **argv){
 	captureRight = cvCreateFileCapture(argv[2]);
 
 	if(argc>3){
-		intrinsicMatrix = (CvMat*)cvLoad(argv[3]);
-		distortionCoeffs = (CvMat*)cvLoad(argv[4]);
+		Mat intrinsicMatrixDouble((CvMat*)cvLoad(argv[3]));
+		Mat distortionCoeffsDouble((CvMat*)cvLoad(argv[4]));
+		Mat intrinsicMatrixSingle, distortionCoeffsSingle;
+		intrinsicMatrixDouble.convertTo(intrinsicMatrixSingle, CV_32FC1);
+		distortionCoeffsDouble.convertTo(distortionCoeffsSingle, CV_32FC1);
+		CvMat temp1 = intrinsicMatrixSingle, temp2 = distortionCoeffsSingle;
+		cvCopy(&temp1, intrinsicMatrix);
+		cvCopy(&temp2, distortionCoeffs);
 	}
 
 	nextFrame();

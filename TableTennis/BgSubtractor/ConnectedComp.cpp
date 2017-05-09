@@ -14,7 +14,8 @@ void find_connected_component(IplImage *mask, int *num, CvRect *bbox){
 	while((c=cvFindNextContour(scanner))!=NULL){
 		//double len = cvContourPerimeter(c);
 		CvBox2D box2d = cvMinAreaRect2(c);
-		if(box2d.size.width<5||box2d.size.width<5||
+		if(box2d.size.width<3||box2d.size.width<3||
+			box2d.size.width>100||box2d.size.height>100||
 			box2d.size.width/box2d.size.height>1.5f||box2d.size.height/box2d.size.width>1.5f){
 			cvSubstituteContour(scanner, NULL);
 		}
@@ -51,7 +52,8 @@ void find_connected_component2(IplImage *mask, int *num, std::vector<cv::Rect> &
 	while((c=cvFindNextContour(scanner))!=NULL){
 		//double len = cvContourPerimeter(c);
 		CvBox2D box2d = cvMinAreaRect2(c);
-		if(box2d.size.width<5||box2d.size.width<5||
+		if(box2d.size.width<3||box2d.size.width<3||
+			box2d.size.width>100||box2d.size.height>100||
 			box2d.size.width/box2d.size.height>1.5f||box2d.size.height/box2d.size.width>1.5f){
 			cvSubstituteContour(scanner, NULL);
 		}

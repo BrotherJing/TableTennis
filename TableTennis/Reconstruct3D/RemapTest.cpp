@@ -12,7 +12,7 @@ required input:
 - video(left right)
 
 usage:
-./remaptest infoLeft.xml infoRight.xml left.mp4 right.mp4
+./remaptest seq3D.xml infoLeft.xml infoRight.xml left.mp4 right.mp4
 =========================================
 */
 
@@ -39,6 +39,7 @@ CvMat *intrinsicMatrix;
 CvMat *distortionCoeffs;
 CvMat *rotationVectors, *rotationMatrixLeft, *rotationMatrixRight;
 CvMat *translationVectors, *translationLeft, *translationRight;
+CvMat *matZScale;
 
 void allocImages(IplImage *frame){
 	sz = cvGetSize(frame);
@@ -60,6 +61,11 @@ void loadMatrices(char **argv){
 	distortionCoeffs = (CvMat*)cvLoad("Distortion.xml");
 	rotationVectors = (CvMat*)cvLoad("Rotation.xml");
 	translationVectors = (CvMat*)cvLoad("Translation.xml");
+	matZScale = (CvMat*)cvLoad("ZScale.xml");
+	if(!matZScale){
+		matZScale = cvCreateMat(1,1,CV_32FC1);
+		*((float*)CV_MAT_ELEM_PTR(*matZScale, 0, 0)) = 1;
+	}
 	infoLeft = (CvMat*)cvLoad(argv[2]);
 	infoRight = (CvMat*)cvLoad(argv[3]);
 
@@ -78,6 +84,10 @@ void loadMatrices(char **argv){
 
 	seqLeft = cvCreateMat(seq3D->rows, 2, CV_32FC1);
 	seqRight = cvCreateMat(seq3D->rows, 2, CV_32FC1);
+
+	for(int i=0;i<seq3D->rows;++i){
+		*((float*)CV_MAT_ELEM_PTR(*seq3D, i, 2)) /= (float)CV_MAT_ELEM(*matZScale, float, 0, 0);
+	}
 
 	cvProjectPoints2(seq3D, rotationMatrixLeft, translationLeft, intrinsicMatrix, distortionCoeffs, seqLeft);
 	cvProjectPoints2(seq3D, rotationMatrixRight, translationRight, intrinsicMatrix, distortionCoeffs, seqRight);
