@@ -26,11 +26,12 @@ const int KEY_RETURN = 13;
 const int KEY_ESC = 27;
 const int KEY_SPACE = 32;
 
-const int SCALE = 2;
+const int SCALE = 1;
 #define CHANNELS 3
 
-const int TRAIN_BG_MODEL_ITER = 50;
+const int TRAIN_BG_MODEL_ITER = 100;
 const int CLEAR_STALE_PER_ITER = 50;
+const int MAX_COMPONENT = 20;
 
 const int DEFAULT_WIDTH = 32/SCALE;
 const int DEFAULT_HEIGHT = 32/SCALE;

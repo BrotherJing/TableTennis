@@ -26,8 +26,8 @@ IplImage *IsmallHSV;
 CvSize sz, szSmall;
 
 //for finding connected components
-int numComponents = 4;
-CvRect bboxes[4];
+int numComponents = MAX_COMPONENT;
+CvRect bboxes[MAX_COMPONENT];
 
 //for bg subtraction
 codeBook **codebooks;
@@ -140,12 +140,12 @@ int main(int argc, char **argv){
 		codebook_tick_img(IsmallHSV, codebooks);
 		if(frameCount<TRAIN_BG_MODEL_ITER){
 			update_codebook_img(IsmallHSV, codebooks, BOUNDS_DEFAULT);
-		}else if(frameCount==TRAIN_BG_MODEL_ITER){
-			update_codebook_img(IsmallHSV, codebooks, BOUNDS_DEFAULT);
-			clear_stale_entries_img(IsmallHSV, codebooks);
 		}else{
+			if(frameCount%CLEAR_STALE_PER_ITER==0){
+				clear_stale_entries_img(IsmallHSV, codebooks);
+			}
 			background_diff_img(IsmallHSV, ImaskSmall, codebooks, MIN_MOD_DEFAULT, MAX_MOD_DEFAULT);
-			numComponents = 4;
+			numComponents = MAX_COMPONENT;
 			find_connected_component(ImaskSmall, &numComponents, bboxes);
 			draw_connected_components(IsmallSmooth, numComponents, bboxes);
 		}

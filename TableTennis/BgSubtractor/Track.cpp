@@ -15,7 +15,7 @@ void Tracker::set(CvRect c){
 }
 
 bool trackBall(Tracker *tracker, CvRect *bbs, int cnt){
-
+	if(tracker==NULL)return false;
 	float dist_min = std::numeric_limits<float>::max();
 	int best_choice=-1;
 	int contain_tracker = -1;

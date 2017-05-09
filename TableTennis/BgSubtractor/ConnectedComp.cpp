@@ -10,7 +10,17 @@ void find_connected_component(IplImage *mask, int *num, CvRect *bbox){
 	}else{
 		cvClearMemStorage(mem_storage);
 	}
-	cvFindContours(mask, mem_storage, &contours, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+	CvContourScanner scanner = cvStartFindContours(mask, mem_storage, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+	while((c=cvFindNextContour(scanner))!=NULL){
+		//double len = cvContourPerimeter(c);
+		CvBox2D box2d = cvMinAreaRect2(c);
+		if(box2d.size.width<5||box2d.size.width<5||
+			box2d.size.width/box2d.size.height>1.5f||box2d.size.height/box2d.size.width>1.5f){
+			cvSubstituteContour(scanner, NULL);
+		}
+	}
+	contours = cvEndFindContours(&scanner);
+	//cvFindContours(mask, mem_storage, &contours, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 	cvZero(mask);
 	if(num!=NULL){
 		int N=*num, numFilled=0, i;
@@ -37,7 +47,17 @@ void find_connected_component2(IplImage *mask, int *num, std::vector<cv::Rect> &
 	}else{
 		cvClearMemStorage(mem_storage);
 	}
-	cvFindContours(mask, mem_storage, &contours, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+	CvContourScanner scanner = cvStartFindContours(mask, mem_storage, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+	while((c=cvFindNextContour(scanner))!=NULL){
+		//double len = cvContourPerimeter(c);
+		CvBox2D box2d = cvMinAreaRect2(c);
+		if(box2d.size.width<5||box2d.size.width<5||
+			box2d.size.width/box2d.size.height>1.5f||box2d.size.height/box2d.size.width>1.5f){
+			cvSubstituteContour(scanner, NULL);
+		}
+	}
+	contours = cvEndFindContours(&scanner);
+	//cvFindContours(mask, mem_storage, &contours, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 	cvZero(mask);
 	if(num!=NULL){
 		int N=*num, numFilled=0, i;

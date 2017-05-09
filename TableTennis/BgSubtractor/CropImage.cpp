@@ -9,7 +9,7 @@ output:
 - ground truth of class label and bounding box
 
 usage:
-./bg xxx.mp4
+./bg xxx.mp4 [output_dir]
 =========================================
 */
 
@@ -34,8 +34,8 @@ CvRect *cropBBoxes;
 int numNeg;
 
 //for finding connected components
-int numComponents = 4;
-CvRect bboxes[4];
+int numComponents = MAX_COMPONENT;
+CvRect bboxes[MAX_COMPONENT];
 
 //for bg subtraction
 codeBook **codebooks;
@@ -172,7 +172,7 @@ int main(int argc, char **argv){
 			clear_stale_entries_img(IsmallHSV, codebooks);
 		}else{
 			background_diff_img(IsmallHSV, ImaskSmall, codebooks, MIN_MOD_DEFAULT, MAX_MOD_DEFAULT);
-			numComponents = 4;
+			numComponents = MAX_COMPONENT;
 			find_connected_component(ImaskSmall, &numComponents, bboxes);
 			draw_connected_components(IsmallSmooth, numComponents, bboxes);
 		}
