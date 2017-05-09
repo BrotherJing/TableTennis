@@ -10,6 +10,7 @@ void findTableArea(IplImage *frame, IplImage *mask, int lo, int hi, int vlo, int
 	IplImage *v = cvCreateImage(cvGetSize(frame), frame->depth, 1);
 	IplImage *maskTemp = cvCreateImage(cvGetSize(frame), mask->depth, 1);
 
+	cvZero(mask);
 	cvCvtColor(frame, hsv, CV_BGR2HSV);
 	cvSplit(hsv, hue, sat, v, 0);
 	cvInRangeS(hue, cvScalar(lo), cvScalar(hi), mask);
@@ -102,7 +103,7 @@ void findEdges(IplImage *frame, IplImage *mask){
 	cvReleaseImage(&mask2);
 }
 
-bool findVertices(IplImage *frame, CvPoint2D32f *pts){
+bool findVertices(IplImage *frame, CvPoint2D32f *pts, CvPoint hints[4][2], int numHints){
 	bool success = true;
 	static CvMemStorage *storage;
 	if (storage == NULL){
@@ -120,17 +121,23 @@ bool findVertices(IplImage *frame, CvPoint2D32f *pts){
 
 	//remove overlapping lines.
 	//cvZero(frame);
-	CvPoint **lines = new CvPoint*[lineseq->total];
-	double **k_b = new double*[lineseq->total];
-	for (int i = 0; i<lineseq->total; ++i){
+	int nLines = lineseq->total+numHints;
+	CvPoint **lines = new CvPoint*[nLines];
+	double **k_b = new double*[nLines];
+	for (int i = 0; i<nLines; ++i){
 		lines[i] = new CvPoint[2];
 		k_b[i] = new double[2];
 	}
 	int total = 0;
 	bool found = false;
-	for (int i = 0; i<lineseq->total; ++i){
+	for (int i = 0; i<nLines; ++i){
 		found = false;
-		CvPoint* line = (CvPoint*)cvGetSeqElem(lineseq, i);
+		CvPoint* line;
+		if(i<numHints){
+			line = hints[i];
+		}else{
+			line = (CvPoint*)cvGetSeqElem(lineseq, i - numHints);
+		}
 		//double theta2 = atan((line[0].x - line[1].x)*1.0 / (line[1].y - line[0].y));
 		//double rho2 = line[0].x*cos(theta2) + line[0].y*sin(theta2);
 		double k2 = (line[0].y - line[1].y)*1.0 / (line[0].x - line[1].x);

@@ -15,12 +15,13 @@
 #include <vector>
 #include <limits.h>
 
-const int SCALE = 4;
+const int SCALE = 1;
 
 const int DISPLAY_MODE_FIRST_FRAME = 0;
 const int DISPLAY_MODE_PLAY = 1;
 const int DISPLAY_MODE_DRAW = 2;
 const int DISPLAY_MODE_PAUSE = 3;
+const int DISPLAY_MODE_DRAW_LINE = 4;
 
 const int KEY_ENTER = 10;
 const int KEY_RETURN = 13;

@@ -24,6 +24,7 @@ using namespace std;
 CvCapture *captureLeft, *captureRight;
 
 IplImage *frameLeft, *IsmallLeft, *frameRight, *IsmallRight, *frameTemp;
+IplImage *draw;
 IplImage *ImaskLeft, *ImaskSmallLeft, *ImaskRight, *ImaskSmallRight, *ImaskTemp, *ImaskSmallTemp;
 IplImage *IsmallLeftHSV, *IsmallRightHSV;
 CvSize sz, szSmall;
@@ -43,7 +44,7 @@ int displayMode = DISPLAY_MODE_FIRST_FRAME;
 
 //for extracting table area
 //int ma = 125, lo = 123, hi = 127, vlo = 40, vhi = 215;
-int vlo = 40, vhi = 215;
+int vlo = 0, vhi = 150;
 int ma[2], lo[2], hi[2];
 int lo0[3], hi0[3], lo1[3], hi1[3];
 
@@ -59,6 +60,8 @@ void AllocImages(IplImage *frame){
 	IsmallRight = cvCreateImage(szSmall, frame->depth, frame->nChannels);
 	IsmallLeftHSV = cvCreateImage(szSmall, frame->depth, frame->nChannels);
 	IsmallRightHSV = cvCreateImage(szSmall, frame->depth, frame->nChannels);
+
+	draw = cvCreateImage(szSmall, frame->depth, frame->nChannels);
 
 	ImaskLeft = cvCreateImage(sz, IPL_DEPTH_8U, 1);
 	ImaskSmallLeft = cvCreateImage(szSmall, IPL_DEPTH_8U, 1);
@@ -105,6 +108,52 @@ void onMouseRight(int event, int x, int y, int flag, void *ustc){
 		drawMask(pointsRight, frame);
 		pointsRight.clear();
 		break;
+	}
+}
+
+CvPoint lines[4][2], linesRight[4][2];
+int nLine=0, nLineRight=0;
+bool isDrawing;
+void onDrawLine(int event, int x, int y, int flag, void *ustc){
+	IplImage *frame = (IplImage*)ustc;
+	CvPoint pt = cvPoint(x, y);
+	if(nLine>=4)return;
+	if(event==CV_EVENT_LBUTTONDOWN){
+		isDrawing = true;
+		lines[nLine][0] = pt;
+	}else if(event==CV_EVENT_MOUSEMOVE){
+		if(isDrawing){
+			cvCopy(frame, draw);
+			cvLine(draw, lines[nLine][0], pt, CVX_RED, 1, CV_AA, 0);
+			cvShowImage("CameraLeft", draw);
+		}
+	}else if(event==CV_EVENT_LBUTTONUP){
+		isDrawing = false;
+		lines[nLine][1] = pt;
+		cvLine(frame, lines[nLine][0], lines[nLine][1], CVX_RED, 1, CV_AA, 0);
+		cvShowImage("CameraLeft", frame);
+		nLine++;
+	}
+}
+void onDrawLineRight(int event, int x, int y, int flag, void *ustc){
+	IplImage *frame = (IplImage*)ustc;
+	CvPoint pt = cvPoint(x, y);
+	if(nLineRight>=4)return;
+	if(event==CV_EVENT_LBUTTONDOWN){
+		isDrawing = true;
+		linesRight[nLineRight][0] = pt;
+	}else if(event==CV_EVENT_MOUSEMOVE){
+		if(isDrawing){
+			cvCopy(frame, draw);
+			cvLine(draw, linesRight[nLineRight][0], pt, CVX_RED, 1, CV_AA, 0);
+			cvShowImage("CameraRight", draw);
+		}
+	}else if(event==CV_EVENT_LBUTTONUP){
+		isDrawing = false;
+		linesRight[nLineRight][1] = pt;
+		cvLine(frame, linesRight[nLineRight][0], linesRight[nLineRight][1], CVX_RED, 1, CV_AA, 0);
+		cvShowImage("CameraRight", frame);
+		nLineRight++;
 	}
 }
 
@@ -161,16 +210,14 @@ int main(int argc, char **argv){
 			findTableArea(frameLeft, ImaskLeft, lo[0], hi[0], vlo, vhi);
 			findTable(ImaskLeft, &bbox);
 			findEdges(frameLeft, ImaskLeft);
-			cvResize(ImaskLeft, ImaskSmallLeft);
-			bool left = findVertices(ImaskSmallLeft, ptsLeft);
+			bool left = findVertices(ImaskSmallLeft, ptsLeft, lines, nLine);
 			cvShowImage("MaskLeft", ImaskSmallLeft);
-
 			//findTableArea(frameRight, ImaskRight, lo, hi, vlo, vhi);
 			findTableArea(frameRight, ImaskRight, lo[1], hi[1], vlo, vhi);
 			findTable(ImaskRight, &bbox);
 			findEdges(frameRight, ImaskRight);
 			cvResize(ImaskRight, ImaskSmallRight);
-			bool right = findVertices(ImaskSmallRight, ptsRight);
+			bool right = findVertices(ImaskSmallRight, ptsRight, linesRight, nLineRight);
 			cvShowImage("MaskRight", ImaskSmallRight);
 			if (left&&right&&!calibrated){
 				calibrateCameraUseGuess(ptsLeft, ptsRight, cvGetSize(ImaskLeft), intrinsicMatrix, distortionCoeffs, rotationVectors, translationVectors);
@@ -221,8 +268,18 @@ int main(int argc, char **argv){
 				//getColorRangeN(captureLeft, ImaskSmallLeft, 10, lo, hi);
 				//getColorRangeN(captureRight, ImaskSmallRight, 10, lo1, hi1);
 				getColorRange(IsmallLeftHSV, ImaskSmallLeft, &ma[0], &lo[0], &hi[0]);
-				getColorRange(IsmallRightHSV, ImaskSmallRight, &ma[1], &lo[1], &hi[1]);
+				//getColorRange(IsmallRightHSV, ImaskSmallRight, &ma[1], &lo[1], &hi[1]);
+				ma[1]=ma[0];lo[1]=lo[0];hi[1]=hi[0];
 			}
+			break;
+		case 'l'://draw lines
+			displayMode = DISPLAY_MODE_DRAW_LINE;
+			setMouseCallback("CameraLeft", onDrawLine, IsmallLeft);
+			setMouseCallback("CameraRight", onDrawLineRight, IsmallRight);
+			cvWaitKey(0);
+			displayMode = DISPLAY_MODE_DRAW;
+			setMouseCallback("CameraLeft", onMouse, IsmallLeft);
+			setMouseCallback("CameraRight", onMouseRight, IsmallRight);
 			break;
 		case 'c'://go to next frame and pause
 			if (displayMode == DISPLAY_MODE_PAUSE){

@@ -11,7 +11,7 @@ void drawConnectedComponents(CvSeq *contours, IplImage *mask);
 void findTableArea(IplImage *frame, IplImage *mask, int lo, int hi, int vlo, int vhi);
 void findTable(IplImage *mask, CvRect *tableBBox);
 void findEdges(IplImage *frame, IplImage *mask);
-bool findVertices(IplImage *frame, CvPoint2D32f *pts);
+bool findVertices(IplImage *frame, CvPoint2D32f *pts, CvPoint hints[4][2]=NULL, int numHints=0);
 
 float getRectScore(CvRect candidate, CvRect golden);
 CvRect getGoldenRect(CvSize size);
