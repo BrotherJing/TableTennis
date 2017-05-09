@@ -96,6 +96,7 @@ void getColorRange(IplImage *frame, CvArr *mask, int *maxIdx, int *loIdx, int *h
 	}
 	std::cout << "ma:" << ma << ", lo:" << lo << ", hi:" << hi << std::endl;
 #ifdef DEBUG_MODE
+	cvShowImage("CameraLeft", mask);
 	cvShowImage("CHANNEL 1", histImage[0]);
 	cvWaitKey(0);
 	cvDestroyWindow("CHANNEL 1");

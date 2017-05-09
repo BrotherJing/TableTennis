@@ -165,7 +165,7 @@ bool findVertices(IplImage *frame, CvPoint2D32f *pts){
 	}
 	for (int i = 0; i < total; ++i){
 		cvLine(frame, lines[i][0], lines[i][1], CVX_WHITE, 1, CV_AA, 0);
-		sprintf(lineStr, "%d", i);
+		sprintf(lineStr, "%c", 'a'+i);
 		cvPutText(frame, lineStr, cvPoint((lines[i][0].x + lines[i][1].x) / 2, (lines[i][0].y + lines[i][1].y) / 2), &font, CVX_WHITE);
 		//cvLine(frame, cvPoint(0, k_b[i][1]), cvPoint(-k_b[i][1] / k_b[i][0], 0), CVX_WHITE, 1, CV_AA, 0);
 		CvPoint p1 = cvPoint(0, k_b[i][1]);// cvPoint(0, k_b[i][1] / sin(k_b[i][0]));
@@ -178,7 +178,7 @@ bool findVertices(IplImage *frame, CvPoint2D32f *pts){
 	float x12, y12, x23, y23, x34, y34, x41, y41;
 	for (int i = 0; i < 4; ++i){
 		char c = cvWaitKey(0);
-		idx[i] = c - '0';
+		idx[i] = c - 'a';
 		if (idx[i]<0 || idx[i]>total){
 			success = false;
 			goto END;

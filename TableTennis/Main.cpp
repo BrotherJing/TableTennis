@@ -25,7 +25,7 @@ CvCapture *captureLeft, *captureRight;
 
 IplImage *frameLeft, *IsmallLeft, *frameRight, *IsmallRight, *frameTemp;
 IplImage *ImaskLeft, *ImaskSmallLeft, *ImaskRight, *ImaskSmallRight, *ImaskTemp, *ImaskSmallTemp;
-IplImage *IsmallLeftHSV;
+IplImage *IsmallLeftHSV, *IsmallRightHSV;
 CvSize sz, szSmall;
 CvRect bbox;
 
@@ -42,10 +42,13 @@ bool calibrated = false;
 int displayMode = DISPLAY_MODE_FIRST_FRAME;
 
 //for extracting table area
-int ma = 125, lo = 123, hi = 127, vlo = 40, vhi = 215;
+//int ma = 125, lo = 123, hi = 127, vlo = 40, vhi = 215;
+int vlo = 40, vhi = 215;
+int ma[2], lo[2], hi[2];
+int lo0[3], hi0[3], lo1[3], hi1[3];
 
 //record points drawn by user
-vector<CvPoint> points;
+vector<CvPoint> points, pointsRight;
 
 void AllocImages(IplImage *frame){
 
@@ -55,6 +58,7 @@ void AllocImages(IplImage *frame){
 	IsmallLeft = cvCreateImage(szSmall, frame->depth, frame->nChannels);
 	IsmallRight = cvCreateImage(szSmall, frame->depth, frame->nChannels);
 	IsmallLeftHSV = cvCreateImage(szSmall, frame->depth, frame->nChannels);
+	IsmallRightHSV = cvCreateImage(szSmall, frame->depth, frame->nChannels);
 
 	ImaskLeft = cvCreateImage(sz, IPL_DEPTH_8U, 1);
 	ImaskSmallLeft = cvCreateImage(szSmall, IPL_DEPTH_8U, 1);
@@ -79,9 +83,27 @@ void onMouse(int event, int x, int y, int flag, void *ustc){
 		cvCircle(frame, pt, 5, CV_RGB(255, 255, 255));
 		break;
 	case CV_EVENT_RBUTTONDOWN:
+		cvZero(ImaskSmallLeft);
 		drawMask(points, ImaskSmallLeft);
 		drawMask(points, frame);
 		points.clear();
+		break;
+	}
+}
+
+void onMouseRight(int event, int x, int y, int flag, void *ustc){
+	IplImage *frame = (IplImage*)ustc;
+	CvPoint pt = cvPoint(x, y);
+	switch (event){
+	case CV_EVENT_LBUTTONDOWN:
+		pointsRight.push_back(pt);
+		cvCircle(frame, pt, 5, CV_RGB(255, 255, 255));
+		break;
+	case CV_EVENT_RBUTTONDOWN:
+		cvZero(ImaskSmallRight);
+		drawMask(pointsRight, ImaskSmallRight);
+		drawMask(pointsRight, frame);
+		pointsRight.clear();
 		break;
 	}
 }
@@ -109,37 +131,49 @@ int main(int argc, char **argv){
 	namedWindow("CameraRight", WINDOW_AUTOSIZE);
 	namedWindow("MaskLeft", WINDOW_AUTOSIZE);
 	namedWindow("MaskRight", WINDOW_AUTOSIZE);
-#ifdef DEBUG_MODE
-	captureLeft = cvCreateFileCapture("0010R.MP4");
-	captureRight = cvCreateFileCapture("0010L.MP4");
-#else
+
 	captureLeft = cvCreateFileCapture(argv[1]);
 	captureRight = cvCreateFileCapture(argv[2]);
-#endif
+
+	if(argc>3){
+		intrinsicMatrix = (CvMat*)cvLoad(argv[3]);
+		distortionCoeffs = (CvMat*)cvLoad(argv[4]);
+	}
+
 	nextFrame();
 
 	AllocImages(frameLeft);
+	
+	cvResize(frameLeft, IsmallLeft);
+	cvResize(frameRight, IsmallRight);
+	cvShowImage("CameraLeft", IsmallLeft);
+	cvShowImage("CameraRight", IsmallRight);
+	displayMode = DISPLAY_MODE_DRAW;
+	setMouseCallback("CameraLeft", onMouse, IsmallLeft);
+	setMouseCallback("CameraRight", onMouseRight, IsmallRight);
 
 	while (1){
 		if (displayMode == DISPLAY_MODE_PLAY){
 			if (!nextFrame())break;
 			cvShowImage("CameraLeft", IsmallLeft);
 			cvShowImage("CameraRight", IsmallRight);
-			findTableArea(frameLeft, ImaskLeft, lo, hi, vlo, vhi);
+			//findTableArea(frameLeft, ImaskLeft, lo, hi, vlo, vhi);
+			findTableArea(frameLeft, ImaskLeft, lo[0], hi[0], vlo, vhi);
 			findTable(ImaskLeft, &bbox);
 			findEdges(frameLeft, ImaskLeft);
 			cvResize(ImaskLeft, ImaskSmallLeft);
 			bool left = findVertices(ImaskSmallLeft, ptsLeft);
 			cvShowImage("MaskLeft", ImaskSmallLeft);
 
-			findTableArea(frameRight, ImaskRight, lo, hi, vlo, vhi);
+			//findTableArea(frameRight, ImaskRight, lo, hi, vlo, vhi);
+			findTableArea(frameRight, ImaskRight, lo[1], hi[1], vlo, vhi);
 			findTable(ImaskRight, &bbox);
 			findEdges(frameRight, ImaskRight);
 			cvResize(ImaskRight, ImaskSmallRight);
 			bool right = findVertices(ImaskSmallRight, ptsRight);
 			cvShowImage("MaskRight", ImaskSmallRight);
 			if (left&&right&&!calibrated){
-				calibrateCamera(ptsLeft, ptsRight, cvGetSize(ImaskLeft), intrinsicMatrix, distortionCoeffs, rotationVectors, translationVectors);
+				calibrateCameraUseGuess(ptsLeft, ptsRight, cvGetSize(ImaskLeft), intrinsicMatrix, distortionCoeffs, rotationVectors, translationVectors);
 				calibrated = true;
 			}
 			if (calibrated){
@@ -159,6 +193,9 @@ int main(int argc, char **argv){
 				}
 				else calibrated = false;
 			}
+		}else{
+			cvShowImage("CameraLeft", IsmallLeft);
+			cvShowImage("CameraRight", IsmallRight);
 		}
 
 		char c = cvWaitKey(20);
@@ -174,17 +211,23 @@ int main(int argc, char **argv){
 			if (displayMode != DISPLAY_MODE_DRAW){
 				displayMode = DISPLAY_MODE_DRAW;
 				setMouseCallback("CameraLeft", onMouse, IsmallLeft);
+				setMouseCallback("CameraRight", onMouseRight, IsmallRight);
 			} else{
 				displayMode = DISPLAY_MODE_PLAY;
 				cvResize(frameLeft, IsmallLeft);
+				cvResize(frameRight, IsmallRight);
 				cvCvtColor(IsmallLeft, IsmallLeftHSV, CV_BGR2HSV);
-				getColorRange(IsmallLeftHSV, ImaskSmallLeft, &ma, &lo, &hi);
+				cvCvtColor(IsmallRight, IsmallRightHSV, CV_BGR2HSV);
+				//getColorRangeN(captureLeft, ImaskSmallLeft, 10, lo, hi);
+				//getColorRangeN(captureRight, ImaskSmallRight, 10, lo1, hi1);
+				getColorRange(IsmallLeftHSV, ImaskSmallLeft, &ma[0], &lo[0], &hi[0]);
+				getColorRange(IsmallRightHSV, ImaskSmallRight, &ma[1], &lo[1], &hi[1]);
 			}
 			break;
 		case 'c'://go to next frame and pause
 			if (displayMode == DISPLAY_MODE_PAUSE){
 				cvCvtColor(IsmallLeft, IsmallLeftHSV, CV_BGR2HSV);
-				getColorRange(IsmallLeftHSV, ImaskSmallLeft, &ma, &lo, &hi);
+				//getColorRange(IsmallLeftHSV, ImaskSmallLeft, &ma, &lo, &hi);
 				nextFrame();
 			}
 			break;
