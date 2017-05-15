@@ -36,6 +36,7 @@ bool trackBall(Tracker *tracker, CvRect *bbs, int cnt){
 		int center_y=bbs[best_choice].y + bbs[best_choice].height/2;
 		int x = center_x - w/2;
 		int y = center_y - h/2;
+		tracker->bbox_idx = best_choice;
 		tracker->context = cvRect(x-w*2, y-h*2, (int)(w*5), (int)(h*5));
 		tracker->bbox = cvRect(x, y, w, h);
 		tracker->last = tracker->center;

@@ -12,6 +12,7 @@ public:
 	CvRect context;
 	CvRect bbox;
 	CvPoint center, last;
+	int bbox_idx;//index of the bbox in the proposals.
 
 	Tracker(CvRect);
 	void set(CvRect);

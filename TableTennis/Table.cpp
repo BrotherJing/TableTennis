@@ -52,6 +52,7 @@ void findTable(IplImage *mask, CvRect *tableBBox){
 	cvDilate(mask, mask, 0, MORPH_DILATE_ITER);
 	cvCopy(mask, copy);
 
+	if(contours==NULL)return;
 	int n = cvFindContours(copy, mem_storage, &contours);
 	CvRect bbox = cvBoundingRect(contours);
 	tableBBox->x = bbox.x;

@@ -274,7 +274,8 @@ int main(int argc, char **argv){
 				cvCvtColor(IsmallRight, IsmallRightHSV, CV_BGR2HSV);
 				//getColorRangeN(captureLeft, ImaskSmallLeft, 10, lo, hi);
 				//getColorRangeN(captureRight, ImaskSmallRight, 10, lo1, hi1);
-				getColorRange(IsmallLeftHSV, ImaskSmallLeft, &ma[0], &lo[0], &hi[0]);
+				//getColorRange(IsmallLeftHSV, ImaskSmallLeft, &ma[0], &lo[0], &hi[0]);
+				ma[0]=125;lo[0]=120;hi[0]=130;
 				//getColorRange(IsmallRightHSV, ImaskSmallRight, &ma[1], &lo[1], &hi[1]);
 				ma[1]=ma[0];lo[1]=lo[0];hi[1]=hi[0];
 			}

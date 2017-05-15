@@ -19,7 +19,7 @@ const int PROB_MAP_HEIGHT = 50;
 const int PROB_MAP_PADDING = 0;
 
 const int NUM_POS_PER_FRAME = 16;
-const int NUM_NEG_PER_FRAME = 8;
+const int NUM_NEG_PER_FRAME = 8;//should be at least 8!
 
 //maximum scale of the patch compared to the original bbox
 const int MAX_SCALE = 4;
@@ -34,6 +34,7 @@ void cropImage(IplImage *frame,
 	int negScale = NEG_SCALE, 
 	int maxScale = MAX_SCALE, 
 	int outputSize = PATCH_WIDTH);
+
 void stitchImages(IplImage **crops, IplImage *display, CvRect *bboxes, int numNeg, int numPos = NUM_POS_PER_FRAME);
 
 void saveImages(IplImage **crops, 
@@ -45,5 +46,15 @@ void saveImages(IplImage **crops,
 	char *frameCountStr, 
 	int numNeg, 
 	int numPos = NUM_POS_PER_FRAME);
+
+void cropNegFromBg(IplImage *frame, IplImage **dest, CvRect *bboxes, int numNeg, int non_bg_idx);
+
+void saveNegFromBg(IplImage **crops, 
+	ofstream &filenames, 
+	ofstream &groundTruth, 
+	ofstream &fileBBox, 
+	string prefix, 
+	char *frameCountStr, 
+	int numCrops);
 
 #endif

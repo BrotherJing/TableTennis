@@ -29,7 +29,8 @@ CvSize sz, szSmall;
 
 //for image cropping
 IplImage **crops;
-IplImage *cropsDisplay;
+IplImage **cropsFromBg;
+IplImage *cropsDisplay, *cropsFromBgDisplay;
 CvRect *cropBBoxes;
 int numNeg;
 
@@ -69,10 +70,15 @@ void allocImages(IplImage *frame){
 	}
 
 	crops = new IplImage*[NUM_POS_PER_FRAME+NUM_NEG_PER_FRAME];
+	cropsFromBg = new IplImage*[MAX_COMPONENT];
 	for(int i=0;i<NUM_POS_PER_FRAME+NUM_NEG_PER_FRAME;++i){
 		crops[i] = cvCreateImage(cvSize(PATCH_WIDTH, PATCH_HEIGHT), frame->depth, frame->nChannels);
 	}
+	for(int i=0;i<MAX_COMPONENT;++i){
+		cropsFromBg[i] = cvCreateImage(cvSize(PATCH_WIDTH, PATCH_HEIGHT), frame->depth, frame->nChannels);
+	}
 	cropsDisplay = cvCreateImage(cvSize(PATCH_WIDTH*(sqrt(NUM_POS_PER_FRAME+NUM_NEG_PER_FRAME)+1), PATCH_HEIGHT*(sqrt(NUM_POS_PER_FRAME+NUM_NEG_PER_FRAME)+1)), frame->depth, frame->nChannels);
+	cropsFromBgDisplay = cvCreateImage(cvSize(PATCH_WIDTH*(sqrt(MAX_COMPONENT)+1), PATCH_HEIGHT*(sqrt(MAX_COMPONENT)+1)), frame->depth, frame->nChannels);
 	cropBBoxes = new CvRect[NUM_POS_PER_FRAME];
 }
 
@@ -146,6 +152,7 @@ int main(int argc, char **argv){
 
 	namedWindow("display", WINDOW_AUTOSIZE);
 	namedWindow("crops", WINDOW_AUTOSIZE);
+	namedWindow("cropsFromBg", WINDOW_AUTOSIZE);
 	setMouseCallback("display", onMouse);
 
 	CvCapture *capture = cvCreateFileCapture(argv[1]);
@@ -167,10 +174,13 @@ int main(int argc, char **argv){
 		codebook_tick_img(IsmallHSV, codebooks);
 		if(frameCount<TRAIN_BG_MODEL_ITER){
 			update_codebook_img(IsmallHSV, codebooks, BOUNDS_DEFAULT);
-		}else if(frameCount==TRAIN_BG_MODEL_ITER){
-			update_codebook_img(IsmallHSV, codebooks, BOUNDS_DEFAULT);
-			clear_stale_entries_img(IsmallHSV, codebooks);
 		}else{
+			if(frameCount%CLEAR_STALE_PER_ITER==0){
+				clear_stale_entries_img(IsmallHSV, codebooks);
+				oFileGroundTruth.flush();
+				oFileNames.flush();
+				oFileBBox.flush();
+			}
 			background_diff_img(IsmallHSV, ImaskSmall, codebooks, MIN_MOD_DEFAULT, MAX_MOD_DEFAULT);
 			numComponents = MAX_COMPONENT;
 			find_connected_component(ImaskSmall, &numComponents, bboxes);
@@ -186,17 +196,23 @@ int main(int argc, char **argv){
 			if(!trackBall(tracker, bboxes, numComponents)){//target lost, draw bbox manually
 				currentState = STATE_PAUSE;
 				dirty = false;
+			}else if(tracker->bbox.width<=0||tracker->bbox.height<=0){
+
 			}else{//target tracked
 				int x = tracker->bbox.x;
 				int y = tracker->bbox.y;
 				cvRectangle(IsmallSmooth, cvPoint(x, y), cvPoint(x+tracker->bbox.width, y+tracker->bbox.height), CVX_GREEN, 1);
 				cropImage(frame, crops, cropBBoxes, cvRect(x*SCALE, y*SCALE, tracker->bbox.width*SCALE, tracker->bbox.height*SCALE), &numNeg);
 				stitchImages(crops, cropsDisplay, cropBBoxes, numNeg);
+				cropNegFromBg(frame, cropsFromBg, bboxes, numComponents, tracker->bbox_idx);
+				stitchImages(cropsFromBg, cropsFromBgDisplay, NULL, numComponents, 0);
 				cvShowImage("display", IsmallSmooth);
 				cvShowImage("crops", cropsDisplay);
+				cvShowImage("cropsFromBg", cropsFromBgDisplay);
 				char c = cvWaitKey(0);
 				if(c==KEY_RETURN||c==KEY_ENTER){
 					saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numNeg);
+					saveNegFromBg(cropsFromBg, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numComponents-1);
 					cout<<"image patches for frame "<<frameCount<<" saved"<<endl;
 				}else if(c=='d'){
 					currentState = STATE_PAUSE;
@@ -219,10 +235,14 @@ int main(int argc, char **argv){
 				if(dirty){
 					cropImage(frame, crops, cropBBoxes, cvRect(tracker->bbox.x*SCALE, tracker->bbox.y*SCALE, tracker->bbox.width*SCALE, tracker->bbox.height*SCALE), &numNeg);
 					stitchImages(crops, cropsDisplay, cropBBoxes, numNeg);
+					cropNegFromBg(frame, cropsFromBg, bboxes, numComponents, tracker->bbox_idx);
+					stitchImages(cropsFromBg, cropsFromBgDisplay, NULL, numComponents, 0);
 					cvShowImage("crops", cropsDisplay);
+					cvShowImage("cropsFromBg", cropsFromBgDisplay);
 					c1 = cvWaitKey(0);
 					if(c1==KEY_RETURN||c1==KEY_ENTER){
 						saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numNeg);
+						saveNegFromBg(cropsFromBg, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numComponents-1);
 						cout<<"image patches for frame "<<frameCount<<" saved"<<endl;
 					}
 					dirty = false;

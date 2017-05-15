@@ -5,7 +5,7 @@ void cropImage(IplImage *frame, IplImage **dest, CvRect *bboxes, CvRect rect, in
 
 	CvSize frameSize = cvGetSize(frame);
 	
-	for(int i=0; i<numPos;){
+	for(int i=0,j=0; j<numPos; j++){
 		int longEdge = rect.width>rect.height?rect.width:rect.height;
 		int size = rand()%((maxScale-1)*longEdge) + longEdge + 1;
 		double ratio = outputSize*1.0/size;
@@ -42,6 +42,16 @@ void cropImage(IplImage *frame, IplImage **dest, CvRect *bboxes, CvRect rect, in
 
 }
 
+void cropNegFromBg(IplImage *frame, IplImage **dest, CvRect *bboxes, int numNeg, int non_bg_idx){
+	for(int i=0,j=0;i<numNeg;++i){
+		if(i==non_bg_idx)continue;
+		cvSetImageROI(frame, bboxes[j]);
+		cvResize(frame, dest[j]);
+		cvResetImageROI(frame);
+		j++;
+	}
+}
+
 void stitchImages(IplImage **crops, IplImage *display, CvRect *bboxes, int numNeg, int numPos){
 	int numCrops = numNeg + numPos;
 	int grid = sqrt(NUM_POS_PER_FRAME+NUM_NEG_PER_FRAME)+1;
@@ -56,6 +66,27 @@ void stitchImages(IplImage **crops, IplImage *display, CvRect *bboxes, int numNe
 			cvResetImageROI(display);
 			++k;
 		}
+	}
+}
+
+void saveNegFromBg(IplImage **crops, ofstream &filenames, ofstream &groundTruth, ofstream &fileBBox, string prefix, char *frameCountStr, int numCrops){
+	char idxStr[5];
+	string filename;
+	double ratio = PROB_MAP_WIDHT*1.0/PATCH_WIDTH;
+
+	IplImage *probMap = cvCreateImage(cvSize(PROB_MAP_WIDHT, PROB_MAP_HEIGHT), IPL_DEPTH_8U, 1);
+
+	for(int i=0;i<numCrops;++i){
+		sprintf(idxStr, "%02d", i);
+		filename = prefix+frameCountStr+idxStr+"BG";
+		cvSaveImage((filename+".jpg").c_str(), crops[i]);
+		filenames<<filename<<".jpg 0"<<endl;
+		if(OUTPUT_PROB_MAP){
+			cvZero(probMap);
+			cvSaveImage((filename+".prob.jpg").c_str(), probMap);
+			groundTruth<<filename<<".prob.jpg 0"<<endl;
+		}
+		fileBBox<<"0 0 0 0"<<endl;
 	}
 }
 
