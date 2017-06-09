@@ -168,6 +168,7 @@ int main(int argc, char **argv){
 		frame = cvQueryFrame(capture);
 		if (!frame)break;
 
+		cvCvtColor(frame, frame, CV_BGR2RGB);
 		cvResize(frame, IsmallSmooth);
 		//cvSmooth(Ismall, IsmallSmooth, CV_MEDIAN, 3);
 		cvCvtColor(IsmallSmooth, IsmallHSV, CV_BGR2YCrCb);
@@ -204,15 +205,20 @@ int main(int argc, char **argv){
 				cvRectangle(IsmallSmooth, cvPoint(x, y), cvPoint(x+tracker->bbox.width, y+tracker->bbox.height), CVX_GREEN, 1);
 				cropImage(frame, crops, cropBBoxes, cvRect(x*SCALE, y*SCALE, tracker->bbox.width*SCALE, tracker->bbox.height*SCALE), &numNeg);
 				stitchImages(crops, cropsDisplay, cropBBoxes, numNeg);
-				cropNegFromBg(frame, cropsFromBg, bboxes, numComponents, tracker->bbox_idx);
+				cropNegFromBg(frame, cropsFromBg, bboxes, &numComponents, tracker->bbox_idx);
 				stitchImages(cropsFromBg, cropsFromBgDisplay, NULL, numComponents, 0);
+				cvShowImage("cropsFromBg", cropsFromBgDisplay);
+
 				cvShowImage("display", IsmallSmooth);
 				cvShowImage("crops", cropsDisplay);
-				cvShowImage("cropsFromBg", cropsFromBgDisplay);
 				char c = cvWaitKey(0);
 				if(c==KEY_RETURN||c==KEY_ENTER){
-					saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numNeg);
-					saveNegFromBg(cropsFromBg, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numComponents-1);
+					if(!BG_ONLY){
+						saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numNeg);
+					}
+					if(!NO_BG){
+						saveNegFromBg(cropsFromBg, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numComponents);
+					}
 					cout<<"image patches for frame "<<frameCount<<" saved"<<endl;
 				}else if(c=='d'){
 					currentState = STATE_PAUSE;
@@ -224,6 +230,7 @@ int main(int argc, char **argv){
 		cvShowImage("display", IsmallSmooth);
 		cvShowImage("crops", cropsDisplay);
 		cvZero(cropsDisplay);
+		cvZero(cropsFromBgDisplay);
 		
 		char c = cvWaitKey(20);
 		if (c == KEY_ESC)break;
@@ -235,14 +242,18 @@ int main(int argc, char **argv){
 				if(dirty){
 					cropImage(frame, crops, cropBBoxes, cvRect(tracker->bbox.x*SCALE, tracker->bbox.y*SCALE, tracker->bbox.width*SCALE, tracker->bbox.height*SCALE), &numNeg);
 					stitchImages(crops, cropsDisplay, cropBBoxes, numNeg);
-					cropNegFromBg(frame, cropsFromBg, bboxes, numComponents, tracker->bbox_idx);
+					cropNegFromBg(frame, cropsFromBg, bboxes, &numComponents, tracker->bbox_idx);
 					stitchImages(cropsFromBg, cropsFromBgDisplay, NULL, numComponents, 0);
 					cvShowImage("crops", cropsDisplay);
 					cvShowImage("cropsFromBg", cropsFromBgDisplay);
 					c1 = cvWaitKey(0);
 					if(c1==KEY_RETURN||c1==KEY_ENTER){
-						saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numNeg);
-						saveNegFromBg(cropsFromBg, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numComponents-1);
+						if(!BG_ONLY){
+							saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numNeg);
+						}
+						if(!NO_BG){
+							saveNegFromBg(cropsFromBg, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numComponents);
+						}
 						cout<<"image patches for frame "<<frameCount<<" saved"<<endl;
 					}
 					dirty = false;

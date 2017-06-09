@@ -1,5 +1,7 @@
 #include "Track.h"
 
+using namespace std;
+
 Tracker::Tracker(CvRect c){
 	bbox = c;
 	context = cvRect(c.x-c.width*2, c.y-c.height*2, (int)(c.width*5), (int)(c.height*5));

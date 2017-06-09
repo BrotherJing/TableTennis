@@ -37,6 +37,7 @@ public:
 	static int MAX_MOD_DEFAULT[3];
 	//for bg subtraction
 	codeBook **codebooks;
+	IplImage *mask;
 
 	BgSubtractor(CvSize size, int train_iter, int numComponents);
 	bool process(IplImage *frame, IplImage *draw=NULL);
@@ -45,7 +46,6 @@ public:
 private:
 	int frameCount;
 	CvSize size;
-	IplImage *mask;
 };
 
 void codebook_tick(codeBook &c);

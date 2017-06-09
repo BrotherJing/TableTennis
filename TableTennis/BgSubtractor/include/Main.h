@@ -26,7 +26,7 @@ const int KEY_RETURN = 13;
 const int KEY_ESC = 27;
 const int KEY_SPACE = 32;
 
-const int SCALE = 2;
+const int SCALE = 1;
 #define CHANNELS 3
 
 const int TRAIN_BG_MODEL_ITER = 50;

@@ -17,7 +17,7 @@ output:
 - sequence3D.xml
 
 usage:
-./reconstruct seqLeft.xml seqRight.xml
+./reconstruct seqLeft.xml seqRight.xml [transformMatrix.xml]
 =========================================
 */
 
@@ -45,6 +45,7 @@ CvMat *distortionCoeffs;
 CvMat *rotationVectors, *rotationMatrixLeft, *rotationMatrixRight;
 CvMat *translationVectors, *translationLeft, *translationRight;
 CvMat *matZScale;
+CvMat *transformMatrix;
 
 void allocImages(IplImage *frame){
 	sz = cvGetSize(frame);
@@ -59,7 +60,7 @@ void allocImages(IplImage *frame){
 void releaseImages(){
 }
 
-void loadMatrices(char **argv){
+void loadMatrices(int argc, char **argv){
 	seqLeft = (CvMat*)cvLoad(argv[1]);
 	seqRight = (CvMat*)cvLoad(argv[2]);
 	intrinsicMatrix = (CvMat*)cvLoad("Intrinsics.xml");
@@ -89,6 +90,10 @@ void loadMatrices(char **argv){
 
 	cvRodrigues2(rotationLeftTemp, rotationMatrixLeft);
 	cvRodrigues2(rotationRightTemp, rotationMatrixRight);
+
+	if(argc>3){
+		transformMatrix = (CvMat*)cvLoad(argv[3]);
+	}
 }
 
 void alignSequences(){
@@ -177,17 +182,20 @@ int main(int argc, char **argv){
 	oFileLeft.open((filename+"L.csv").c_str(), ios::out | ios::trunc);
 	oFileRight.open((filename+"R.csv").c_str(), ios::out | ios::trunc);
 	
-	loadMatrices(argv);
+	loadMatrices(argc, argv);
 	alignSequences();
 
 	Reconstruct reconstruct(".");
 
 	while(ptrLeft<seqLeft->rows &&
 		ptrRight<seqRight->rows){
-		CvPoint3D32f xyz = uv2xyz(cvPoint((int)CV_MAT_ELEM(*seqLeft, int, ptrLeft, 1), (int)CV_MAT_ELEM(*seqLeft, int, ptrLeft, 2)),
+		CvPoint left = cvPoint((int)CV_MAT_ELEM(*seqLeft, int, ptrLeft, 1), (int)CV_MAT_ELEM(*seqLeft, int, ptrLeft, 2));
+		if(argc>3)
+			left = reconstruct.transform(left, transformMatrix);
+		CvPoint3D32f xyz = uv2xyz(left,
 			cvPoint((int)CV_MAT_ELEM(*seqRight, int, ptrRight, 1), (int)CV_MAT_ELEM(*seqRight, int, ptrRight, 2)));
 		seq3D.push_back(xyz);
-		CvPoint3D32f xyz2 = reconstruct.uv2xyz(cvPoint((int)CV_MAT_ELEM(*seqLeft, int, ptrLeft, 1), (int)CV_MAT_ELEM(*seqLeft, int, ptrLeft, 2)),
+		CvPoint3D32f xyz2 = reconstruct.uv2xyz(left,
 			cvPoint((int)CV_MAT_ELEM(*seqRight, int, ptrRight, 1), (int)CV_MAT_ELEM(*seqRight, int, ptrRight, 2)));
 		cout<<xyz.x<<","<<xyz.y<<","<<xyz.z<<endl;
 		cout<<xyz2.x<<","<<xyz2.y<<","<<xyz2.z<<endl;

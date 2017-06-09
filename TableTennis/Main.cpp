@@ -2,6 +2,8 @@
 =========================================
 required input:
 - video(left right)
+- initial intrinsic matrix and distortion coeffs(from chessboard)
+- another 
 
 output:
 - Intrinsics.xml
@@ -10,7 +12,7 @@ output:
 - Translation.xml
 
 usage:
-./TableTennis left.mp4 right.mp4 [intrinsic matrix] [distortion coeffs]
+./TableTennis left.mp4 right.mp4 [intrinsic matrix] [distortion coeffs] [intrinsic matrix 1]
 first press 'l', to add line hint. then draw an area of the table, then press 'd'.
 =========================================
 */
@@ -36,16 +38,18 @@ CvPoint2D32f ptsLeft[4], ptsRight[4];
 CvMat *HLeft = cvCreateMat(3, 3, CV_32F);
 CvMat *HRight = cvCreateMat(3, 3, CV_32F);
 CvMat *intrinsicMatrix = cvCreateMat(3, 3, CV_32FC1);
+CvMat *intrinsicMatrix1 = cvCreateMat(3, 3, CV_32FC1);
 CvMat *distortionCoeffs = cvCreateMat(5, 1, CV_32FC1);
 CvMat *rotationVectors = cvCreateMat(2, 3, CV_32FC1);
 CvMat *translationVectors = cvCreateMat(2, 3, CV_32FC1);
+CvMat *transformMatrix = cvCreateMat(3, 3, CV_32FC1);
 bool calibrated = false;
 
 int displayMode = DISPLAY_MODE_FIRST_FRAME;
 
 //for extracting table area
 //int ma = 125, lo = 123, hi = 127, vlo = 40, vhi = 215;
-int vlo = 0, vhi = 150;
+int vlo = 40, vhi = 215;
 int ma[2], lo[2], hi[2];
 int lo0[3], hi0[3], lo1[3], hi1[3];
 
@@ -161,6 +165,8 @@ void onDrawLineRight(int event, int x, int y, int flag, void *ustc){
 bool nextFrame(){
 	frameLeft = cvQueryFrame(captureLeft);
 	frameRight = cvQueryFrame(captureRight);
+	//cvCvtColor(frameLeft, frameLeft, CV_BGR2RGB);
+	//cvCvtColor(frameRight, frameRight, CV_BGR2RGB);
 	if (!frameLeft || !frameRight)return false;
 	if (displayMode == DISPLAY_MODE_FIRST_FRAME){
 		displayMode = DISPLAY_MODE_PLAY;
@@ -194,6 +200,14 @@ int main(int argc, char **argv){
 		CvMat temp1 = intrinsicMatrixSingle, temp2 = distortionCoeffsSingle;
 		cvCopy(&temp1, intrinsicMatrix);
 		cvCopy(&temp2, distortionCoeffs);
+		if(argc>5){
+			Mat intrinsicMatrixDouble1((CvMat*)cvLoad(argv[5]));
+			Mat intrinsicMatrixSingle1;
+			intrinsicMatrixDouble1.convertTo(intrinsicMatrixSingle1, CV_32FC1);
+			CvMat temp3 = intrinsicMatrixSingle1;
+			cvCopy(&temp3, intrinsicMatrix1);
+			getTransformMatrix(intrinsicMatrix, intrinsicMatrix1, transformMatrix);
+		}
 	}
 
 	nextFrame();
@@ -227,11 +241,21 @@ int main(int argc, char **argv){
 			bool right = findVertices(ImaskSmallRight, ptsRight, linesRight, nLineRight);
 			cvShowImage("MaskRight", ImaskSmallRight);
 			if (left&&right&&!calibrated){
-				calibrateCameraUseGuess(ptsLeft, ptsRight, cvGetSize(ImaskLeft), intrinsicMatrix, distortionCoeffs, rotationVectors, translationVectors);
+				if(argc>5){
+					transformUV(ptsLeft, transformMatrix);
+				}
+				if(argc>3)
+					calibrateCameraUseGuess(ptsLeft, ptsRight, cvGetSize(ImaskLeft), intrinsicMatrix, distortionCoeffs, rotationVectors, translationVectors);
+				else
+					calibrateCamera(ptsLeft, ptsRight, cvGetSize(ImaskLeft), intrinsicMatrix, distortionCoeffs, rotationVectors, translationVectors);
 				calibrated = true;
 			}
 			if (calibrated){
-				cvUndistort2(frameLeft, frameTemp, intrinsicMatrix, distortionCoeffs);
+				if(argc>5){
+					cvUndistort2(frameLeft, frameTemp, intrinsicMatrix1, distortionCoeffs);
+				}else{
+					cvUndistort2(frameLeft, frameTemp, intrinsicMatrix, distortionCoeffs);
+				}
 				cvResize(frameTemp, IsmallLeftHSV);
 				cvShowImage("CameraLeft", IsmallLeftHSV);
 				cvUndistort2(frameRight, frameTemp, intrinsicMatrix, distortionCoeffs);
@@ -243,6 +267,8 @@ int main(int argc, char **argv){
 					cvSave("Distortion.xml", distortionCoeffs);
 					cvSave("Rotation.xml", rotationVectors);
 					cvSave("Translation.xml", translationVectors);
+					if(argc>5)
+						cvSave("Transform.xml", transformMatrix);
 					cout << "camera matrix saved!" << endl;
 				}
 				else calibrated = false;
@@ -274,10 +300,10 @@ int main(int argc, char **argv){
 				cvCvtColor(IsmallRight, IsmallRightHSV, CV_BGR2HSV);
 				//getColorRangeN(captureLeft, ImaskSmallLeft, 10, lo, hi);
 				//getColorRangeN(captureRight, ImaskSmallRight, 10, lo1, hi1);
-				//getColorRange(IsmallLeftHSV, ImaskSmallLeft, &ma[0], &lo[0], &hi[0]);
+				getColorRange(IsmallLeftHSV, ImaskSmallLeft, &ma[0], &lo[0], &hi[0]);
 				ma[0]=125;lo[0]=120;hi[0]=130;
-				//getColorRange(IsmallRightHSV, ImaskSmallRight, &ma[1], &lo[1], &hi[1]);
-				ma[1]=ma[0];lo[1]=lo[0];hi[1]=hi[0];
+				getColorRange(IsmallRightHSV, ImaskSmallRight, &ma[1], &lo[1], &hi[1]);
+				//ma[1]=ma[0];lo[1]=lo[0];hi[1]=hi[0];
 			}
 			break;
 		case 'l'://draw lines

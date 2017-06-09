@@ -42,14 +42,17 @@ void cropImage(IplImage *frame, IplImage **dest, CvRect *bboxes, CvRect rect, in
 
 }
 
-void cropNegFromBg(IplImage *frame, IplImage **dest, CvRect *bboxes, int numNeg, int non_bg_idx){
-	for(int i=0,j=0;i<numNeg;++i){
+void cropNegFromBg(IplImage *frame, IplImage **dest, CvRect *bboxes, int *numNeg, int non_bg_idx){
+	int j=0;
+	for(int i=0;i<*numNeg;++i){
 		if(i==non_bg_idx)continue;
-		cvSetImageROI(frame, bboxes[j]);
+		if(bboxes[i].width*SCALE<10||bboxes[i].height*SCALE<10)continue;
+		cvSetImageROI(frame, cvRect(bboxes[i].x*SCALE, bboxes[i].y*SCALE, bboxes[i].width*SCALE, bboxes[i].height*SCALE));
 		cvResize(frame, dest[j]);
 		cvResetImageROI(frame);
 		j++;
 	}
+	*numNeg = j;
 }
 
 void stitchImages(IplImage **crops, IplImage *display, CvRect *bboxes, int numNeg, int numPos){

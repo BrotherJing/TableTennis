@@ -19,5 +19,8 @@ CvRect getGoldenRect(CvSize size);
 //3d reconstruction
 void calibrateCamera(CvPoint2D32f *ptsLeft, CvPoint2D32f *ptsRight, CvSize imageSize, CvMat *intrinsicMatrix, CvMat *distortionMatrix, CvMat *rotationVectors, CvMat *translationVectors);
 void calibrateCameraUseGuess(CvPoint2D32f *ptsLeft, CvPoint2D32f *ptsRight, CvSize imageSize, CvMat *intrinsicMatrix, CvMat *distortionMatrix, CvMat *rotationVectors, CvMat *translationVectors);
+void transformUV(CvPoint2D32f *ptsLeft, CvMat *intrinsicMatrix, CvMat *intrinsicMatrix1);
+void transformUV(CvPoint2D32f *ptsLeft, CvMat *transformMatrix);
+void getTransformMatrix(CvMat *intrinsicMatrix, CvMat *intrinsicMatrix1, CvMat *res);
 
 #endif

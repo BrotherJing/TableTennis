@@ -13,7 +13,7 @@ output:
 - ZScale.xml
 
 usage:
-./GetZScale left.mp4 right.mp4
+./GetZScale left.mp4 right.mp4 [transform.xml]
 =========================================
 */
 
@@ -37,10 +37,11 @@ CvMat *intrinsicMatrix;
 CvMat *distortionCoeffs;
 CvMat *rotationVectors, *rotationMatrixLeft, *rotationMatrixRight;
 CvMat *translationVectors, *translationLeft, *translationRight;
+CvMat *transformMatrix;
 
 //record points drawn by user
 vector<CvPoint> points;
-CvPoint pts[4];
+CvPoint2D32f pts[4];
 
 void AllocImages(IplImage *frame){
 
@@ -70,7 +71,7 @@ void onMouse(int event, int x, int y, int flag, void *ustc){
 	}
 }
 
-void loadMatrices(){
+void loadMatrices(int argc, char **argv){
 	intrinsicMatrix = (CvMat*)cvLoad("Intrinsics.xml");
 	distortionCoeffs = (CvMat*)cvLoad("Distortion.xml");
 	rotationVectors = (CvMat*)cvLoad("Rotation.xml");
@@ -93,9 +94,13 @@ void loadMatrices(){
 
 	cvRodrigues2(rotationLeftTemp, rotationMatrixLeft);
 	cvRodrigues2(rotationRightTemp, rotationMatrixRight);
+
+	if(argc>3){
+		transformMatrix = (CvMat*)cvLoad(argv[3]);
+	}
 }
 
-CvPoint3D32f uv2xyz(CvPoint uvLeft,CvPoint uvRight)  
+CvPoint3D32f uv2xyz(CvPoint2D32f uvLeft,CvPoint2D32f uvRight)  
 {  
     //  [u1]      |X|                     [u2]      |X|  
     //Z*|v1| = Ml*|Y|                   Z*|v2| = Mr*|Y|  
@@ -160,9 +165,22 @@ CvPoint3D32f uv2xyz(CvPoint uvLeft,CvPoint uvRight)
     return world;  
 }  
 
+CvPoint2D32f transform(CvPoint uv, CvMat *transformMatrix){
+	CvPoint2D32f uv1;
+	CvMat *B = cvCreateMat(3,1,CV_32FC1);
+	*((float*)CV_MAT_ELEM_PTR(*B, 0, 0)) = uv.x;
+	*((float*)CV_MAT_ELEM_PTR(*B, 1, 0)) = uv.y;
+	*((float*)CV_MAT_ELEM_PTR(*B, 2, 0)) = 1;
+	CvMat *XY = cvCreateMat(3,1,CV_32FC1);
+	cvMatMul(transformMatrix, B, XY);
+	uv1.x = (float)CV_MAT_ELEM(*XY, float, 0,0);
+	uv1.y = (float)CV_MAT_ELEM(*XY, float, 1,0);
+	return uv1;
+}
+
 int main(int argc, char **argv){
 
-	loadMatrices();
+	loadMatrices(argc, argv);
 
 	namedWindow("display", WINDOW_AUTOSIZE);
 
@@ -185,8 +203,13 @@ int main(int argc, char **argv){
 		}else break;
 	}
 	cout<<points[0].x<<","<<points[0].y<<" "<<points[1].x<<","<<points[1].y<<endl;
-	pts[0] = points[0];
-	pts[1] = points[1];
+	if(argc>3){
+		pts[0] = transform(points[0], transformMatrix);
+		pts[1] = transform(points[1], transformMatrix);
+	}else{
+		pts[0] = CvPoint2D32f{points[0].x, points[0].y};
+		pts[1] = CvPoint2D32f{points[1].x, points[1].y};
+	}
 	points.clear();
 	while(true){
 		cvResize(frameRight, IsmallRight);
@@ -199,8 +222,8 @@ int main(int argc, char **argv){
 		}else break;
 	}
 	cout<<points[0].x<<","<<points[0].y<<" "<<points[1].x<<","<<points[1].y<<endl;
-	pts[2] = points[0];
-	pts[3] = points[1];
+	pts[2] = CvPoint2D32f{points[0].x, points[0].y};
+	pts[3] = CvPoint2D32f{points[1].x, points[1].y};
 
 	CvPoint3D32f xyz1 = uv2xyz(pts[0], pts[2]);
 	CvPoint3D32f xyz2 = uv2xyz(pts[1], pts[3]);

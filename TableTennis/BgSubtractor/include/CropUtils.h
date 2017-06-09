@@ -9,6 +9,8 @@
 #include <limits.h>
 
 const bool OUTPUT_PROB_MAP = true;
+const bool BG_ONLY = false;
+const bool NO_BG = true;
 
 const int PATCH_WIDTH = 100;
 const int PATCH_HEIGHT = 100;
@@ -47,7 +49,7 @@ void saveImages(IplImage **crops,
 	int numNeg, 
 	int numPos = NUM_POS_PER_FRAME);
 
-void cropNegFromBg(IplImage *frame, IplImage **dest, CvRect *bboxes, int numNeg, int non_bg_idx);
+void cropNegFromBg(IplImage *frame, IplImage **dest, CvRect *bboxes, int *numNeg, int non_bg_idx);
 
 void saveNegFromBg(IplImage **crops, 
 	ofstream &filenames, 

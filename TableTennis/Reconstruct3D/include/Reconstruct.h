@@ -10,6 +10,7 @@ public:
 	~Reconstruct();
 	CvPoint3D32f uv2xyz(CvPoint uvLeft, CvPoint uvRight);
 	CvPoint xyz2uv(CvPoint3D32f xyz, bool left);
+	CvPoint transform(CvPoint uv, CvMat *transformMatrix);
 private:
 	CvMat *intrinsicMatrix;
 	CvMat *distortionCoeffs;
@@ -17,6 +18,7 @@ private:
 	CvMat *rotationLeftTemp, *rotationRightTemp;
 	CvMat *translationVectors, *translationLeft, *translationRight;
 	CvMat *matZScale;
+	CvMat *transformMatrix, *transformMatrixInv;
 };
 
 #endif

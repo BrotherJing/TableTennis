@@ -13,6 +13,13 @@ Reconstruct::Reconstruct(string camera_matrix_dir){
 		matZScale = cvCreateMat(1,1,CV_32FC1);
 		*((float*)CV_MAT_ELEM_PTR(*matZScale, 0, 0)) = 1;
 	}
+    transformMatrix = (CvMat*)cvLoad((camera_matrix_dir + "/Transform.xml").c_str());
+    if(transformMatrix){
+        transformMatrixInv = cvCreateMat(3, 3, CV_32FC1);
+        cvInvert(transformMatrix, transformMatrixInv);
+    }else{
+        transformMatrixInv = NULL;
+    }
 
 	rotationMatrixLeft = cvCreateMat(3, 3, CV_32FC1);
 	rotationMatrixRight = cvCreateMat(3, 3, CV_32FC1);
@@ -36,6 +43,18 @@ Reconstruct::Reconstruct(string camera_matrix_dir){
 Reconstruct::~Reconstruct(){
 }
 
+CvPoint Reconstruct::transform(CvPoint uv, CvMat *transformMatrix){
+    CvPoint uv1;
+    CvMat *B = cvCreateMat(3,1,CV_32FC1);
+    *((float*)CV_MAT_ELEM_PTR(*B, 0, 0)) = uv.x;
+    *((float*)CV_MAT_ELEM_PTR(*B, 1, 0)) = uv.y;
+    *((float*)CV_MAT_ELEM_PTR(*B, 2, 0)) = 1;
+    CvMat *XY = cvCreateMat(3,1,CV_32FC1);
+    cvMatMul(transformMatrix, B, XY);
+    uv1.x = (int)((float)CV_MAT_ELEM(*XY, float, 0,0));
+    uv1.y = (int)((float)CV_MAT_ELEM(*XY, float, 1,0));
+    return uv1;
+}
 
 CvPoint3D32f Reconstruct::uv2xyz(CvPoint uvLeft,CvPoint uvRight)
 {  
@@ -43,6 +62,9 @@ CvPoint3D32f Reconstruct::uv2xyz(CvPoint uvLeft,CvPoint uvRight)
     //Z*|v1| = Ml*|Y|                   Z*|v2| = Mr*|Y|  
     //  [ 1]      |Z|                     [ 1]      |Z|  
     //            |1|                               |1|  
+    if(transformMatrix!=NULL){
+        uvLeft = transform(uvLeft, transformMatrix);
+    }
     CvMat *mLeftRT = cvCreateMat(3,4,CV_32FC1);
     CvMat *mRightRT = cvCreateMat(3,4,CV_32FC1);
     for(int i=0;i<3;++i){
@@ -107,10 +129,14 @@ CvPoint Reconstruct::xyz2uv(CvPoint3D32f xyz, bool left){
     CvMat *output = cvCreateMat(1, 2, CV_32FC1);
     *((float*)CV_MAT_ELEM_PTR(*input, 0, 0)) = xyz.x;
     *((float*)CV_MAT_ELEM_PTR(*input, 0, 1)) = xyz.y;
-    *((float*)CV_MAT_ELEM_PTR(*input, 0, 2)) = xyz.z;
+    *((float*)CV_MAT_ELEM_PTR(*input, 0, 2)) = xyz.z/(float)CV_MAT_ELEM(*matZScale, float, 0, 0);
     if(left){
         cvProjectPoints2(input, rotationLeftTemp, translationLeft, 
             intrinsicMatrix, distortionCoeffs, output);
+        if(transformMatrixInv!=NULL){
+            return transform(CvPoint{(float)CV_MAT_ELEM(*output, float, 0, 0),
+                (float)CV_MAT_ELEM(*output, float, 0, 1)}, transformMatrixInv);
+        }
     }else{
         cvProjectPoints2(input, rotationRightTemp, translationRight, 
             intrinsicMatrix, distortionCoeffs, output);
