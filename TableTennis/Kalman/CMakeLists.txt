@@ -13,12 +13,12 @@ include_directories(${KALMAN_INCLUDE_DIR})
 find_path(Codebook_INCLUDE_DIR
 	Codebook.h
         HINTS
-        /home/jing/Documents/TableTennis/TableTennis/BgSubtractor/include)
+        ../BgSubtractor/include)
 
 find_library(Codebook_LIBRARY
 	bgsubtract
         HINTS
-        /home/jing/Documents/TableTennis/TableTennis/build/BgSubtractor)
+        ../build/BgSubtractor)
 
 include_directories(${Codebook_INCLUDE_DIR})
 
