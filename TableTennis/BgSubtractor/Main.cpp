@@ -6,6 +6,7 @@ required input:
 output:
 - xxx.sequence.xml
 - xxx.info.xml
+- xxx.bbox.txt(each line is [frame x y w h])
 
 usage:
 ./bg xxx.mp4 [skip]
@@ -196,7 +197,7 @@ int main(int argc, char **argv){
 		frameCount++;
 		frame = cvQueryFrame(capture);
 		if (!frame)break;
-		cvCvtColor(frame, frame, CV_BGR2RGB);
+		//cvCvtColor(frame, frame, CV_BGR2RGB);
 		if(skip>0&&frameCount<skip)continue;
 
 		cvResize(frame, IsmallSmooth);

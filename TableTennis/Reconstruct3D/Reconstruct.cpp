@@ -11,7 +11,7 @@ Reconstruct::Reconstruct(string camera_matrix_dir){
 	matZScale = (CvMat*)cvLoad((camera_matrix_dir + "/ZScale.xml").c_str());
 	if(!matZScale){
 		matZScale = cvCreateMat(1,1,CV_32FC1);
-		*((float*)CV_MAT_ELEM_PTR(*matZScale, 0, 0)) = 1;
+		*((float*)CV_MAT_ELEM_PTR(*matZScale, 0, 0)) = -1;
 	}
     transformMatrix = (CvMat*)cvLoad((camera_matrix_dir + "/Transform.xml").c_str());
     if(transformMatrix){

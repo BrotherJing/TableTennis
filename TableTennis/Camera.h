@@ -15,7 +15,8 @@
 #include <vector>
 #include <limits.h>
 
-const int SCALE = 1;
+//scale down the video frame to display window. 2 means 0.5x of original size.
+const int SCALE = 2;
 
 const int DISPLAY_MODE_FIRST_FRAME = 0;
 const int DISPLAY_MODE_PLAY = 1;

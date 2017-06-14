@@ -5,7 +5,7 @@ required matrix file:
 - Distortion.xml
 - Rotation.xml
 - Translation.xml
-- ZScale.xml
+- [not required anymore]ZScale.xml
 
 required input:
 - sequence 2D(left, right)
@@ -70,7 +70,7 @@ void loadMatrices(int argc, char **argv){
 	matZScale = (CvMat*)cvLoad("ZScale.xml");
 	if(!matZScale){
 		matZScale = cvCreateMat(1,1,CV_32FC1);
-		*((float*)CV_MAT_ELEM_PTR(*matZScale, 0, 0)) = 1;
+		*((float*)CV_MAT_ELEM_PTR(*matZScale, 0, 0)) = -1;
 	}
 
 	rotationMatrixLeft = cvCreateMat(3, 3, CV_32FC1);

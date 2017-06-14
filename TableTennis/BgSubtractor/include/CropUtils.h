@@ -8,18 +8,21 @@
 #include <stdio.h>
 #include <limits.h>
 
+//output probobility map or not. In general, the image patches and probability maps should be generated together.
 const bool OUTPUT_PROB_MAP = true;
-const bool BG_ONLY = false;
+//output positive and negative examples from ping pong ball and its surrounding, or negative example from background.
 const bool NO_BG = true;
 
+//size of an output image patch
 const int PATCH_WIDTH = 100;
 const int PATCH_HEIGHT = 100;
-
+//size of an output probability map
 const int PROB_MAP_WIDHT = 50;
 const int PROB_MAP_HEIGHT = 50;
 
 const int PROB_MAP_PADDING = 0;
 
+//number of patches from one frame
 const int NUM_POS_PER_FRAME = 16;
 const int NUM_NEG_PER_FRAME = 8;//should be at least 8!
 

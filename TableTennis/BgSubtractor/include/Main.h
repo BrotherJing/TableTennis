@@ -26,11 +26,16 @@ const int KEY_RETURN = 13;
 const int KEY_ESC = 27;
 const int KEY_SPACE = 32;
 
-const int SCALE = 1;
+//scale down the video frame to display window. 2 means 0.5x of original size.
+const double SCALE = 2;
 #define CHANNELS 3
 
+//how many frames to use to model the background codebook
 const int TRAIN_BG_MODEL_ITER = 50;
+//how often to update the codebook
 const int CLEAR_STALE_PER_ITER = 50;
+//maximum connected components output by the background subtractor
+const int MAX_COMPONENT = 20;
 
 const int DEFAULT_WIDTH = 32/SCALE;
 const int DEFAULT_HEIGHT = 32/SCALE;

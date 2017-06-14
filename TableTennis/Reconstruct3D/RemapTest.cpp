@@ -1,5 +1,7 @@
 /*
 =========================================
+remap 3d coordinates to 2d image plane to check correctness.
+
 required matrix file:
 - Intrinsics.xml
 - Distortion.xml
@@ -64,7 +66,7 @@ void loadMatrices(char **argv){
 	matZScale = (CvMat*)cvLoad("ZScale.xml");
 	if(!matZScale){
 		matZScale = cvCreateMat(1,1,CV_32FC1);
-		*((float*)CV_MAT_ELEM_PTR(*matZScale, 0, 0)) = 1;
+		*((float*)CV_MAT_ELEM_PTR(*matZScale, 0, 0)) = -1;
 	}
 	infoLeft = (CvMat*)cvLoad(argv[2]);
 	infoRight = (CvMat*)cvLoad(argv[3]);

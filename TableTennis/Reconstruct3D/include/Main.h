@@ -24,6 +24,7 @@ const int KEY_RETURN = 13;
 const int KEY_ESC = 27;
 const int KEY_SPACE = 32;
 
+//scale down the video frame to display window. 2 means 0.5x of original size.
 const int SCALE = 1;
 
 #endif

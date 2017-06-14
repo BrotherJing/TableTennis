@@ -1,4 +1,9 @@
 /*
+use kalman filter to predict a sequence of xyz coordinates
+
+required input:
+- coords.txt, each line is [x y z]
+
 usage:
 ./kalman <coords.txt>
 */

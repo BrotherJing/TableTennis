@@ -1,4 +1,10 @@
 /*
+track with camshift.
+
+required input:
+- video
+- ground truth, each line is [frame x y w h]. Will use the first line as the initial bounding box.
+
 usage:
 ./camshift <video> <ground_truth_path>
 */

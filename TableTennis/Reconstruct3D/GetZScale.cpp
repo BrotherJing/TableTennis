@@ -1,5 +1,7 @@
 /*
 =========================================
+DEPRECATED!! DO NOT USE!!
+
 required matrix file:
 - Intrinsics.xml
 - Distortion.xml

@@ -1,5 +1,7 @@
 /*
 =========================================
+generate dataset for the CNN tracking model
+
 required input:
 - video
 
@@ -168,7 +170,7 @@ int main(int argc, char **argv){
 		frame = cvQueryFrame(capture);
 		if (!frame)break;
 
-		cvCvtColor(frame, frame, CV_BGR2RGB);
+		//cvCvtColor(frame, frame, CV_BGR2RGB);
 		cvResize(frame, IsmallSmooth);
 		//cvSmooth(Ismall, IsmallSmooth, CV_MEDIAN, 3);
 		cvCvtColor(IsmallSmooth, IsmallHSV, CV_BGR2YCrCb);
@@ -213,10 +215,9 @@ int main(int argc, char **argv){
 				cvShowImage("crops", cropsDisplay);
 				char c = cvWaitKey(0);
 				if(c==KEY_RETURN||c==KEY_ENTER){
-					if(!BG_ONLY){
+					if(NO_BG){
 						saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numNeg);
-					}
-					if(!NO_BG){
+					}else{
 						saveNegFromBg(cropsFromBg, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numComponents);
 					}
 					cout<<"image patches for frame "<<frameCount<<" saved"<<endl;
@@ -248,10 +249,9 @@ int main(int argc, char **argv){
 					cvShowImage("cropsFromBg", cropsFromBgDisplay);
 					c1 = cvWaitKey(0);
 					if(c1==KEY_RETURN||c1==KEY_ENTER){
-						if(!BG_ONLY){
+						if(NO_BG){
 							saveImages(crops, cropBBoxes, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numNeg);
-						}
-						if(!NO_BG){
+						}else{
 							saveNegFromBg(cropsFromBg, oFileNames, oFileGroundTruth, oFileBBox, prefix, frameCountStr, numComponents);
 						}
 						cout<<"image patches for frame "<<frameCount<<" saved"<<endl;

@@ -2,8 +2,8 @@
 =========================================
 required input:
 - video(left right)
-- initial intrinsic matrix and distortion coeffs(from chessboard)
-- another 
+- [optional]intrinsic matrix and distortion coeffs from chessboard
+- [optional]intrinsic matrix for the left camera, if the two camera have different parameters. In this case, the first intrinsic matrix is for the right camera
 
 output:
 - Intrinsics.xml
@@ -12,7 +12,7 @@ output:
 - Translation.xml
 
 usage:
-./TableTennis left.mp4 right.mp4 [intrinsic matrix] [distortion coeffs] [intrinsic matrix 1]
+./TableTennis left.mp4 right.mp4 [intrinsic_matrix distortion_coeffs [intrinsic_matrix_left]]
 first press 'l', to add line hint. then draw an area of the table, then press 'd'.
 =========================================
 */
@@ -51,10 +51,6 @@ int displayMode = DISPLAY_MODE_FIRST_FRAME;
 //int ma = 125, lo = 123, hi = 127, vlo = 40, vhi = 215;
 int vlo = 40, vhi = 215;
 int ma[2], lo[2], hi[2];
-int lo0[3], hi0[3], lo1[3], hi1[3];
-
-//record points drawn by user
-vector<CvPoint> points, pointsRight;
 
 void AllocImages(IplImage *frame){
 
@@ -78,10 +74,8 @@ void AllocImages(IplImage *frame){
 	frameTemp = cvCreateImage(sz, frame->depth, frame->nChannels);
 }
 
-void DeallocateImages(){
-	cvReleaseImage(&IsmallLeft); cvReleaseImage(&IsmallRight);
-}
-
+//record points drawn by user
+vector<CvPoint> points, pointsRight;
 void onMouse(int event, int x, int y, int flag, void *ustc){
 	IplImage *frame = (IplImage*)ustc;
 	CvPoint pt = cvPoint(x, y);
@@ -192,6 +186,7 @@ int main(int argc, char **argv){
 	captureRight = cvCreateFileCapture(argv[2]);
 
 	if(argc>3){
+		//load initial camera parameter matrix
 		Mat intrinsicMatrixDouble((CvMat*)cvLoad(argv[3]));
 		Mat distortionCoeffsDouble((CvMat*)cvLoad(argv[4]));
 		Mat intrinsicMatrixSingle, distortionCoeffsSingle;
@@ -301,7 +296,7 @@ int main(int argc, char **argv){
 				//getColorRangeN(captureLeft, ImaskSmallLeft, 10, lo, hi);
 				//getColorRangeN(captureRight, ImaskSmallRight, 10, lo1, hi1);
 				getColorRange(IsmallLeftHSV, ImaskSmallLeft, &ma[0], &lo[0], &hi[0]);
-				ma[0]=125;lo[0]=120;hi[0]=130;
+				//ma[0]=125;lo[0]=120;hi[0]=130;
 				getColorRange(IsmallRightHSV, ImaskSmallRight, &ma[1], &lo[1], &hi[1]);
 				//ma[1]=ma[0];lo[1]=lo[0];hi[1]=hi[0];
 			}
@@ -327,7 +322,6 @@ int main(int argc, char **argv){
 		default:break;
 		}
 	}
-	DeallocateImages();
 	cvReleaseCapture(&captureLeft); cvReleaseCapture(&captureRight);
 	cvDestroyWindow("CameraLeft");
 	cvDestroyWindow("CameraRight");
