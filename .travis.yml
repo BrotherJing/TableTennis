@@ -11,7 +11,7 @@ before_script:
   - cd build
   - cmake ..
   - make -j8
-  - sudo make -j8 install
+  - sudo make install
 
   - cd ../../TableTennis
   - mkdir build
