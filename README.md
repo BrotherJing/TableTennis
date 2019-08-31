@@ -41,4 +41,4 @@ Remap to 2D for visual checking
 
 ## Screenshots
 
-![3D Reconstruction](http://7xrcar.com1.z0.glb.clouddn.com/Screenshot%20from%202017-03-03%2023-03-23.png)
+![3D Reconstruction](https://brotherjing-static.s3-ap-northeast-1.amazonaws.com/img/Screenshot_2017-03-03-23-03-23.png)
